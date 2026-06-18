@@ -36,7 +36,7 @@ export function ChatView({ threadId }: { threadId: string }) {
   const [initial] = useState<UIMessage[]>(
     () => getThread(threadId)?.messages ?? [],
   );
-  const formRef = useRef<HTMLFormElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, stop } = useChat({
     id: threadId,
@@ -50,7 +50,7 @@ export function ChatView({ threadId }: { threadId: string }) {
   }, [messages, threadId]);
 
   const focusComposer = () => {
-    const ta = formRef.current?.querySelector(
+    const ta = composerRef.current?.querySelector(
       'textarea[name="message"]',
     ) as HTMLTextAreaElement | null;
     ta?.focus();
@@ -143,8 +143,8 @@ export function ChatView({ threadId }: { threadId: string }) {
       </Conversation>
 
       <div className="border-t border-border/60 bg-background/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-        <div className="mx-auto w-full max-w-2xl">
-          <PromptInput ref={formRef} onSubmit={onSubmit}>
+        <div ref={composerRef} className="mx-auto w-full max-w-2xl">
+          <PromptInput onSubmit={onSubmit}>
             <PromptInputTextarea placeholder="Ask about GPA, AP, IB, credits…" />
             <PromptInputFooter className="justify-end">
               <PromptInputSubmit status={status} onStop={stop} />
