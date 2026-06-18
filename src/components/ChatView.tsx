@@ -18,6 +18,7 @@ import {
   PromptInputTextarea,
   PromptInputFooter,
   PromptInputSubmit,
+  type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { GraduationCap } from "lucide-react";
@@ -32,8 +33,10 @@ const STARTERS = [
 ];
 
 export function ChatView({ threadId }: { threadId: string }) {
-  const [initial] = useState<UIMessage[]>(() => getThread(threadId)?.messages ?? []);
-  const taRef = useRef<HTMLTextAreaElement>(null);
+  const [initial] = useState<UIMessage[]>(
+    () => getThread(threadId)?.messages ?? [],
+  );
+  const formRef = useRef<HTMLFormElement>(null);
 
   const { messages, sendMessage, status, stop } = useChat({
     id: threadId,
@@ -41,28 +44,29 @@ export function ChatView({ threadId }: { threadId: string }) {
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 
-  // Persist
   useEffect(() => {
     if (messages.length === 0) return;
     saveThreadMessages(threadId, messages);
   }, [messages, threadId]);
 
-  // Focus composer on mount & thread switch
+  const focusComposer = () => {
+    const ta = formRef.current?.querySelector(
+      'textarea[name="message"]',
+    ) as HTMLTextAreaElement | null;
+    ta?.focus();
+  };
+
   useEffect(() => {
-    taRef.current?.focus();
+    focusComposer();
   }, [threadId]);
 
-  // Refocus after stream completes
   useEffect(() => {
-    if (status === "ready") taRef.current?.focus();
+    if (status === "ready") focusComposer();
   }, [status]);
 
-  const [draft, setDraft] = useState("");
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = draft.trim();
+  const onSubmit = (message: PromptInputMessage) => {
+    const text = message.text.trim();
     if (!text || status === "submitted" || status === "streaming") return;
-    setDraft("");
     sendMessage({ text });
   };
 
@@ -73,22 +77,15 @@ export function ChatView({ threadId }: { threadId: string }) {
       <Conversation>
         <ConversationContent className="mx-auto w-full max-w-2xl px-4 pb-2 pt-4">
           {isEmpty ? (
-            <ConversationEmptyState
-              className="pt-4"
-              icon={
+            <ConversationEmptyState className="pt-4">
+              <div className="flex flex-col items-center gap-3">
                 <img
                   src={logo}
                   alt=""
-                  width={64}
-                  height={64}
-                  className="h-16 w-16"
+                  width={56}
+                  height={56}
+                  className="h-14 w-14"
                 />
-              }
-              title="Hey, I'm EduBridge."
-              description="Ask anything about adapting to your new school system — GPA, AP, IB, credits, culture shock."
-            >
-              <div className="flex flex-col items-center gap-3">
-                <img src={logo} alt="" width={56} height={56} className="h-14 w-14" />
                 <div className="space-y-1">
                   <h3 className="font-display text-lg font-semibold">
                     Hey, I'm EduBridge.
@@ -103,9 +100,7 @@ export function ChatView({ threadId }: { threadId: string }) {
                     <button
                       key={s}
                       type="button"
-                      onClick={() => {
-                        sendMessage({ text: s });
-                      }}
+                      onClick={() => sendMessage({ text: s })}
                       className="rounded-xl border border-border bg-card px-3 py-2.5 text-left text-sm shadow-soft transition-colors hover:border-primary/40 hover:bg-primary/5"
                     >
                       {s}
@@ -149,19 +144,10 @@ export function ChatView({ threadId }: { threadId: string }) {
 
       <div className="border-t border-border/60 bg-background/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
         <div className="mx-auto w-full max-w-2xl">
-          <PromptInput onSubmit={onSubmit}>
-            <PromptInputTextarea
-              ref={taRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Ask about GPA, AP, IB, credits…"
-            />
+          <PromptInput ref={formRef} onSubmit={onSubmit}>
+            <PromptInputTextarea placeholder="Ask about GPA, AP, IB, credits…" />
             <PromptInputFooter className="justify-end">
-              <PromptInputSubmit
-                status={status}
-                disabled={!draft.trim() && status !== "streaming"}
-                onStop={stop}
-              />
+              <PromptInputSubmit status={status} onStop={stop} />
             </PromptInputFooter>
           </PromptInput>
         </div>
@@ -169,3 +155,4 @@ export function ChatView({ threadId }: { threadId: string }) {
     </div>
   );
 }
+
