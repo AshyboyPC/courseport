@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ensureInitialThread } from "@/lib/threads";
 
-export const Route = createFileRoute("/chat")({
+export const Route = createFileRoute("/chat/")({
   component: ChatRedirect,
 });
 
