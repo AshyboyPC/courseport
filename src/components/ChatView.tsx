@@ -8,11 +8,7 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputTextarea,
@@ -23,7 +19,7 @@ import {
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { GraduationCap } from "lucide-react";
 import { getThread, saveThreadMessages } from "@/lib/threads";
-import logo from "@/assets/edubridge-logo.png";
+import { ScholaportLogo } from "@/components/ScholaportLogo";
 
 const STARTERS = [
   "How do I calculate weighted vs unweighted GPA?",
@@ -33,9 +29,7 @@ const STARTERS = [
 ];
 
 export function ChatView({ threadId }: { threadId: string }) {
-  const [initial] = useState<UIMessage[]>(
-    () => getThread(threadId)?.messages ?? [],
-  );
+  const [initial] = useState<UIMessage[]>(() => getThread(threadId)?.messages ?? []);
   const composerRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, stop } = useChat({
@@ -79,20 +73,12 @@ export function ChatView({ threadId }: { threadId: string }) {
           {isEmpty ? (
             <ConversationEmptyState className="pt-4">
               <div className="flex flex-col items-center gap-3">
-                <img
-                  src={logo}
-                  alt=""
-                  width={56}
-                  height={56}
-                  className="h-14 w-14"
-                />
+                <ScholaportLogo className="h-14" />
                 <div className="space-y-1">
-                  <h3 className="font-display text-lg font-semibold">
-                    Hey, I'm EduBridge.
-                  </h3>
+                  <h3 className="font-display text-lg font-semibold">Hey, I'm Scholaport.</h3>
                   <p className="mx-auto max-w-xs text-sm text-muted-foreground">
-                    Your friendly copilot for landing in a new school system —
-                    transcripts, credits, culture and all.
+                    Your friendly copilot for landing in a new school system — transcripts, credits,
+                    culture and all.
                   </p>
                 </div>
                 <div className="mt-2 grid w-full gap-2">
@@ -117,15 +103,13 @@ export function ChatView({ threadId }: { threadId: string }) {
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <GraduationCap className="h-3 w-3" />
                     </span>
-                    EduBridge
+                    Scholaport
                   </div>
                 )}
                 <MessageContent>
                   {m.parts.map((part, i) => {
                     if (part.type === "text") {
-                      return (
-                        <MessageResponse key={i}>{part.text}</MessageResponse>
-                      );
+                      return <MessageResponse key={i}>{part.text}</MessageResponse>;
                     }
                     return null;
                   })}
@@ -155,4 +139,3 @@ export function ChatView({ threadId }: { threadId: string }) {
     </div>
   );
 }
-

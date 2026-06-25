@@ -9,21 +9,85 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TwinsRouteImport } from './routes/twins'
 import { Route as TranscriptRouteImport } from './routes/transcript'
+import { Route as RoadmapRouteImport } from './routes/roadmap'
+import { Route as ReferenceCoverageRouteImport } from './routes/reference-coverage'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PathmatchRouteImport } from './routes/pathmatch'
+import { Route as PacketRouteImport } from './routes/packet'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as GapsRouteImport } from './routes/gaps'
+import { Route as AdvisorRouteImport } from './routes/advisor'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiAdvisorRouteImport } from './routes/api/advisor'
+import { Route as ApiV1TranscriptsRouteImport } from './routes/api/v1/transcripts'
+import { Route as ApiV1ReferenceRouteImport } from './routes/api/v1/reference'
+import { Route as ApiV1PassportRouteImport } from './routes/api/v1/passport'
 
+const TwinsRoute = TwinsRouteImport.update({
+  id: '/twins',
+  path: '/twins',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TranscriptRoute = TranscriptRouteImport.update({
   id: '/transcript',
   path: '/transcript',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoadmapRoute = RoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferenceCoverageRoute = ReferenceCoverageRouteImport.update({
+  id: '/reference-coverage',
+  path: '/reference-coverage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PathmatchRoute = PathmatchRouteImport.update({
+  id: '/pathmatch',
+  path: '/pathmatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PacketRoute = PacketRouteImport.update({
+  id: '/packet',
+  path: '/packet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GapsRoute = GapsRouteImport.update({
   id: '/gaps',
   path: '/gaps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvisorRoute = AdvisorRouteImport.update({
+  id: '/advisor',
+  path: '/advisor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -46,64 +110,195 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdvisorRoute = ApiAdvisorRouteImport.update({
+  id: '/api/advisor',
+  path: '/api/advisor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TranscriptsRoute = ApiV1TranscriptsRouteImport.update({
+  id: '/api/v1/transcripts',
+  path: '/api/v1/transcripts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ReferenceRoute = ApiV1ReferenceRouteImport.update({
+  id: '/api/v1/reference',
+  path: '/api/v1/reference',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PassportRoute = ApiV1PassportRouteImport.update({
+  id: '/api/v1/passport',
+  path: '/api/v1/passport',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/advisor': typeof AdvisorRoute
   '/gaps': typeof GapsRoute
+  '/guide': typeof GuideRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/packet': typeof PacketRoute
+  '/pathmatch': typeof PathmatchRoute
+  '/profile': typeof ProfileRoute
+  '/reference-coverage': typeof ReferenceCoverageRoute
+  '/roadmap': typeof RoadmapRoute
   '/transcript': typeof TranscriptRoute
+  '/twins': typeof TwinsRoute
+  '/api/advisor': typeof ApiAdvisorRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
+  '/api/v1/passport': typeof ApiV1PassportRoute
+  '/api/v1/reference': typeof ApiV1ReferenceRoute
+  '/api/v1/transcripts': typeof ApiV1TranscriptsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/advisor': typeof AdvisorRoute
   '/gaps': typeof GapsRoute
+  '/guide': typeof GuideRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/packet': typeof PacketRoute
+  '/pathmatch': typeof PathmatchRoute
+  '/profile': typeof ProfileRoute
+  '/reference-coverage': typeof ReferenceCoverageRoute
+  '/roadmap': typeof RoadmapRoute
   '/transcript': typeof TranscriptRoute
+  '/twins': typeof TwinsRoute
+  '/api/advisor': typeof ApiAdvisorRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat': typeof ChatIndexRoute
+  '/api/v1/passport': typeof ApiV1PassportRoute
+  '/api/v1/reference': typeof ApiV1ReferenceRoute
+  '/api/v1/transcripts': typeof ApiV1TranscriptsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/advisor': typeof AdvisorRoute
   '/gaps': typeof GapsRoute
+  '/guide': typeof GuideRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/packet': typeof PacketRoute
+  '/pathmatch': typeof PathmatchRoute
+  '/profile': typeof ProfileRoute
+  '/reference-coverage': typeof ReferenceCoverageRoute
+  '/roadmap': typeof RoadmapRoute
   '/transcript': typeof TranscriptRoute
+  '/twins': typeof TwinsRoute
+  '/api/advisor': typeof ApiAdvisorRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
+  '/api/v1/passport': typeof ApiV1PassportRoute
+  '/api/v1/reference': typeof ApiV1ReferenceRoute
+  '/api/v1/transcripts': typeof ApiV1TranscriptsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/advisor'
     | '/gaps'
+    | '/guide'
+    | '/login'
+    | '/onboarding'
+    | '/packet'
+    | '/pathmatch'
+    | '/profile'
+    | '/reference-coverage'
+    | '/roadmap'
     | '/transcript'
+    | '/twins'
+    | '/api/advisor'
     | '/api/chat'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/v1/passport'
+    | '/api/v1/reference'
+    | '/api/v1/transcripts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/gaps' | '/transcript' | '/api/chat' | '/chat/$threadId' | '/chat'
+  to:
+    | '/'
+    | '/advisor'
+    | '/gaps'
+    | '/guide'
+    | '/login'
+    | '/onboarding'
+    | '/packet'
+    | '/pathmatch'
+    | '/profile'
+    | '/reference-coverage'
+    | '/roadmap'
+    | '/transcript'
+    | '/twins'
+    | '/api/advisor'
+    | '/api/chat'
+    | '/chat/$threadId'
+    | '/chat'
+    | '/api/v1/passport'
+    | '/api/v1/reference'
+    | '/api/v1/transcripts'
   id:
     | '__root__'
     | '/'
+    | '/advisor'
     | '/gaps'
+    | '/guide'
+    | '/login'
+    | '/onboarding'
+    | '/packet'
+    | '/pathmatch'
+    | '/profile'
+    | '/reference-coverage'
+    | '/roadmap'
     | '/transcript'
+    | '/twins'
+    | '/api/advisor'
     | '/api/chat'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/v1/passport'
+    | '/api/v1/reference'
+    | '/api/v1/transcripts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdvisorRoute: typeof AdvisorRoute
   GapsRoute: typeof GapsRoute
+  GuideRoute: typeof GuideRoute
+  LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
+  PacketRoute: typeof PacketRoute
+  PathmatchRoute: typeof PathmatchRoute
+  ProfileRoute: typeof ProfileRoute
+  ReferenceCoverageRoute: typeof ReferenceCoverageRoute
+  RoadmapRoute: typeof RoadmapRoute
   TranscriptRoute: typeof TranscriptRoute
+  TwinsRoute: typeof TwinsRoute
+  ApiAdvisorRoute: typeof ApiAdvisorRoute
   ApiChatRoute: typeof ApiChatRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
   ChatIndexRoute: typeof ChatIndexRoute
+  ApiV1PassportRoute: typeof ApiV1PassportRoute
+  ApiV1ReferenceRoute: typeof ApiV1ReferenceRoute
+  ApiV1TranscriptsRoute: typeof ApiV1TranscriptsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/twins': {
+      id: '/twins'
+      path: '/twins'
+      fullPath: '/twins'
+      preLoaderRoute: typeof TwinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transcript': {
       id: '/transcript'
       path: '/transcript'
@@ -111,11 +306,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TranscriptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/roadmap': {
+      id: '/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof RoadmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reference-coverage': {
+      id: '/reference-coverage'
+      path: '/reference-coverage'
+      fullPath: '/reference-coverage'
+      preLoaderRoute: typeof ReferenceCoverageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pathmatch': {
+      id: '/pathmatch'
+      path: '/pathmatch'
+      fullPath: '/pathmatch'
+      preLoaderRoute: typeof PathmatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/packet': {
+      id: '/packet'
+      path: '/packet'
+      fullPath: '/packet'
+      preLoaderRoute: typeof PacketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/gaps': {
       id: '/gaps'
       path: '/gaps'
       fullPath: '/gaps'
       preLoaderRoute: typeof GapsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advisor': {
+      id: '/advisor'
+      path: '/advisor'
+      fullPath: '/advisor'
+      preLoaderRoute: typeof AdvisorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -146,17 +404,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/advisor': {
+      id: '/api/advisor'
+      path: '/api/advisor'
+      fullPath: '/api/advisor'
+      preLoaderRoute: typeof ApiAdvisorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/transcripts': {
+      id: '/api/v1/transcripts'
+      path: '/api/v1/transcripts'
+      fullPath: '/api/v1/transcripts'
+      preLoaderRoute: typeof ApiV1TranscriptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/reference': {
+      id: '/api/v1/reference'
+      path: '/api/v1/reference'
+      fullPath: '/api/v1/reference'
+      preLoaderRoute: typeof ApiV1ReferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/passport': {
+      id: '/api/v1/passport'
+      path: '/api/v1/passport'
+      fullPath: '/api/v1/passport'
+      preLoaderRoute: typeof ApiV1PassportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdvisorRoute: AdvisorRoute,
   GapsRoute: GapsRoute,
+  GuideRoute: GuideRoute,
+  LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
+  PacketRoute: PacketRoute,
+  PathmatchRoute: PathmatchRoute,
+  ProfileRoute: ProfileRoute,
+  ReferenceCoverageRoute: ReferenceCoverageRoute,
+  RoadmapRoute: RoadmapRoute,
   TranscriptRoute: TranscriptRoute,
+  TwinsRoute: TwinsRoute,
+  ApiAdvisorRoute: ApiAdvisorRoute,
   ApiChatRoute: ApiChatRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
   ChatIndexRoute: ChatIndexRoute,
+  ApiV1PassportRoute: ApiV1PassportRoute,
+  ApiV1ReferenceRoute: ApiV1ReferenceRoute,
+  ApiV1TranscriptsRoute: ApiV1TranscriptsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

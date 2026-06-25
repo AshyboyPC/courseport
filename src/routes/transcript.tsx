@@ -1,268 +1,252 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { AppShell } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { convertTranscript } from "@/lib/edu.functions";
-import { Camera, Loader2, Upload, FileText, CheckCircle2 } from "lucide-react";
+  ArrowRight,
+  Check,
+  ChevronDown,
+  FileText,
+  Languages,
+  Loader2,
+  ShieldCheck,
+  UploadCloud,
+} from "lucide-react";
 import { toast } from "sonner";
-import { createThread } from "@/lib/threads";
+import { PassportShell } from "@/components/PassportShell";
+import {
+  createTranscriptUpload,
+  getCreditMappings,
+  getPassportSummary,
+  getTranscriptCourses,
+} from "@/lib/scholaport-api";
 
-export const Route = createFileRoute("/transcript")({
-  head: () => ({
-    meta: [
-      { title: "Transcript Converter · EduBridge AI" },
-      {
-        name: "description",
-        content:
-          "Upload a foreign high-school transcript and get an instant US 4.0 GPA equivalency, with course-by-course mapping.",
-      },
-    ],
-  }),
-  component: TranscriptPage,
-});
-
-type Result = Awaited<ReturnType<typeof convertTranscript>>;
+export const Route = createFileRoute("/transcript")({ component: TranscriptPage });
 
 function TranscriptPage() {
-  const convert = useServerFn(convertTranscript);
-  const navigate = useNavigate();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [imageDataUrl, setImageDataUrl] = useState<string | undefined>();
-  const [rawText, setRawText] = useState("");
-  const [targetSystem, setTargetSystem] = useState("US 4.0 GPA");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const courses = useQuery({ queryKey: ["transcript-courses"], queryFn: getTranscriptCourses });
+  const mappings = useQuery({ queryKey: ["credit-mappings"], queryFn: getCreditMappings });
+  const passport = useQuery({ queryKey: ["passport-summary"], queryFn: getPassportSummary });
+  const [uploading, setUploading] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const onFile = async (file: File) => {
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error("Image too large — keep it under 8 MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setImageDataUrl(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const onSubmit = async () => {
-    if (!imageDataUrl && !rawText.trim()) {
-      toast.error("Add a transcript photo or paste the text first.");
-      return;
-    }
-    setLoading(true);
-    setResult(null);
+  async function processFile(file: File) {
+    if (file.size > 50 * 1024 * 1024) return toast.error("Please keep the file under 50 MB.");
+    setUploading(true);
     try {
-      const data = await convert({
-        data: { imageDataUrl, rawText: rawText.trim() || undefined, targetSystem },
-      });
-      setResult(data);
-    } catch (e) {
-      console.error(e);
-      toast.error("Could not parse the transcript. Try a clearer image.");
+      const transcript = await createTranscriptUpload(file);
+      await queryClient.invalidateQueries({ queryKey: ["passport-summary"] });
+      toast.success(
+        transcript.storageUploaded
+          ? "Transcript uploaded securely."
+          : "Transcript record saved. Storage is not available yet.",
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed.");
     } finally {
-      setLoading(false);
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
-  };
+  }
 
-  const discussInChat = () => {
-    if (!result) return;
-    const summary = `I converted my transcript. Country: ${result.country}. Original scale: ${result.originalScale}. New GPA: ${result.convertedGpa}. ${result.summary}\n\nCan you tell me what to focus on first?`;
-    const t = createThread({
-      title: `Transcript · ${result.country}`,
-      messages: [
-        {
-          id: crypto.randomUUID(),
-          role: "user",
-          parts: [{ type: "text", text: summary }],
-        },
-      ],
-    });
-    navigate({ to: "/chat/$threadId", params: { threadId: t.id } });
-  };
+  const rows = (courses.data ?? []).map((course) => ({
+    course,
+    mapping: (mappings.data ?? []).find((item) => item.transcript_course_id === course.id),
+  }));
+  const transcript = passport.data?.transcript;
+  const loading = courses.isLoading || mappings.isLoading || passport.isLoading;
+  const error = courses.error || mappings.error || passport.error;
 
   return (
-    <AppShell title="Transcript">
-      <div className="h-full overflow-y-auto">
-        <div className="mx-auto w-full max-w-2xl space-y-5 p-4 pb-8">
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-card">
-            <h1 className="font-display text-lg font-semibold">
-              Smart Transcript Converter
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Snap or paste your foreign transcript. We'll translate grades into
-              your new system.
-            </p>
-
-            <div className="mt-4 space-y-3">
+    <PassportShell
+      eyebrow="Transcript intelligence"
+      title="Bring your learning with you."
+      description="Upload a transcript securely. Scholaport stores the original record now; extraction and automated academic mapping are intentionally reserved for the next implementation stage."
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void processFile(file);
+        }}
+      />
+      <div className="mx-auto max-w-6xl grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white shadow-card">
+          <div className="flex flex-col gap-4 border-b border-[#E8EBF0] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-[#0A175A]/8 text-[#0A175A]">
+                <FileText className="h-5 w-5" />
+              </span>
               <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Target system
-                </Label>
-                <Select value={targetSystem} onValueChange={setTargetSystem}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="US 4.0 GPA">
-                      United States (4.0 GPA)
-                    </SelectItem>
-                    <SelectItem value="Canadian percentage (Ontario)">
-                      Canada (Ontario %)
-                    </SelectItem>
-                    <SelectItem value="UK A-Level letter grades">
-                      United Kingdom (A-Level)
-                    </SelectItem>
-                    <SelectItem value="Australian ATAR / band">
-                      Australia (ATAR)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <h2 className="font-display text-lg font-bold">Academic transcript</h2>
+                <p className="mt-0.5 text-xs text-[#5A6380]">
+                  {transcript?.original_filename ?? "No transcript uploaded"}
+                </p>
               </div>
-
-              <div className="grid gap-2">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) onFile(f);
-                  }}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileRef.current?.click()}
-                    className="h-11"
-                  >
-                    <Camera className="mr-2 h-4 w-4" /> Snap
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      if (fileRef.current) {
-                        fileRef.current.removeAttribute("capture");
-                        fileRef.current.click();
-                        fileRef.current.setAttribute("capture", "environment");
-                      }
-                    }}
-                    className="h-11"
-                  >
-                    <Upload className="mr-2 h-4 w-4" /> Upload
-                  </Button>
-                </div>
-                {imageDataUrl && (
-                  <div className="relative overflow-hidden rounded-xl border border-border">
-                    <img
-                      src={imageDataUrl}
-                      alt="Transcript preview"
-                      className="max-h-56 w-full object-contain bg-muted"
-                    />
+            </div>
+            <button
+              disabled={uploading}
+              onClick={() => inputRef.current?.click()}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#01C3AD] px-4 text-xs font-bold text-[#060F3D] disabled:opacity-60"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UploadCloud className="h-4 w-4" />
+              )}{" "}
+              {transcript ? "Replace file" : "Choose a file"}
+            </button>
+          </div>
+          {loading ? (
+            <Status text="Loading your transcript…" />
+          ) : error ? (
+            <Status
+              text={error instanceof Error ? error.message : "Unable to load transcript."}
+              error
+            />
+          ) : rows.length === 0 ? (
+            <div className="grid min-h-[340px] place-items-center p-8 text-center">
+              <div className="max-w-md">
+                <UploadCloud className="mx-auto h-10 w-10 text-[#01C3AD]" />
+                <h3 className="mt-4 font-display text-xl font-bold">
+                  {transcript
+                    ? "File saved. Course extraction has not run yet."
+                    : "Upload your first transcript"}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[#5A6380]">
+                  {transcript
+                    ? "The authenticated file record is live in your passport. No courses or mappings will be invented while OCR is unavailable."
+                    : "PDF, JPG, or PNG up to 50 MB. Your file belongs only to your account."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#E8EBF0]">
+              {rows.map(({ course, mapping }) => {
+                const open = expanded === course.id;
+                return (
+                  <article key={course.id}>
                     <button
-                      type="button"
-                      onClick={() => setImageDataUrl(undefined)}
-                      className="absolute right-2 top-2 rounded-md bg-background/90 px-2 py-1 text-xs font-medium shadow-soft"
+                      onClick={() => setExpanded(open ? null : course.id)}
+                      className="grid w-full grid-cols-[1fr_auto] gap-4 p-5 text-left hover:bg-[#F6F8FB] sm:grid-cols-[1fr_1fr_auto]"
                     >
-                      Remove
+                      <div>
+                        <p className="text-sm font-bold">
+                          {course.course_name_translated ?? course.course_name_original}
+                        </p>
+                        <p className="mt-1 text-xs text-[#5A6380]">
+                          {course.course_name_original} ·{" "}
+                          {course.grade_original ?? "Grade not recorded"}
+                        </p>
+                      </div>
+                      <div className="hidden sm:block">
+                        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#9AA3B2]">
+                          Probable equivalent
+                        </p>
+                        <p className="mt-1 text-xs font-semibold">
+                          {mapping?.probable_us_equivalent ?? "Not mapped"}
+                        </p>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 ${open ? "rotate-180" : ""}`} />
                     </button>
-                  </div>
-                )}
-              </div>
-
+                    {open && (
+                      <div className="grid gap-3 bg-[#F6F8FB] px-5 py-4 sm:grid-cols-3">
+                        <Detail
+                          label="Subject"
+                          value={
+                            mapping?.target_subject_category ??
+                            course.subject_category ??
+                            "Uncategorized"
+                          }
+                        />
+                        <Detail
+                          label="Credit"
+                          value={
+                            mapping?.credits_mapped == null
+                              ? "Not mapped"
+                              : `${mapping.credits_mapped} credit`
+                          }
+                        />
+                        <Detail
+                          label="Review"
+                          value={
+                            mapping?.needs_counselor_review
+                              ? "Counselor review needed"
+                              : "No review flag"
+                          }
+                        />
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+        <aside className="space-y-5">
+          <section className="rounded-[24px] bg-[#0A175A] p-5 text-white">
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#01C3AD]">
+              Passport record
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Metric value={String(rows.length)} label="courses" />
+              <Metric value={String((mappings.data ?? []).length)} label="mappings" />
+            </div>
+            <p className="mt-5 text-xs leading-5 text-white/65">
+              Only records stored for your authenticated account appear here.
+            </p>
+            <Link
+              to="/gaps"
+              className="mt-5 flex h-11 items-center justify-center gap-2 rounded-xl bg-[#01C3AD] text-sm font-bold text-[#060F3D]"
+            >
+              View gap analysis <ArrowRight className="h-4 w-4" />
+            </Link>
+          </section>
+          <section className="rounded-[20px] border border-[#CDD3DE]/70 bg-white p-5">
+            <div className="flex gap-3">
+              <Languages className="h-5 w-5 text-[#019A8A]" />
               <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Or paste transcript text
-                </Label>
-                <Textarea
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  rows={4}
-                  placeholder="Course, year, grade…"
-                />
+                <p className="text-sm font-bold">Academic, not literal</p>
+                <p className="mt-1 text-xs leading-5 text-[#5A6380]">
+                  Automated translation and OCR are not enabled in this foundation build.
+                </p>
               </div>
-
-              <Button
-                onClick={onSubmit}
-                disabled={loading}
-                className="h-11 w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Converting…
-                  </>
-                ) : (
-                  <>
-                    <FileText className="mr-2 h-4 w-4" /> Convert transcript
-                  </>
-                )}
-              </Button>
             </div>
           </section>
-
-          {result && (
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-card">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Converted GPA · {result.country}
-                  </div>
-                  <div className="mt-1 font-display text-4xl font-semibold text-primary">
-                    {result.convertedGpa}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    from {result.originalScale}
-                  </div>
-                </div>
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              </div>
-
-              <p className="mt-3 text-sm text-foreground">{result.summary}</p>
-
-              <div className="mt-4 divide-y divide-border rounded-xl border border-border">
-                {result.courses.map((c, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_auto] gap-2 p-3">
-                    <div>
-                      <div className="text-sm font-medium">{c.course}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {c.year} · est. {c.creditsLikely} credits
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-muted-foreground line-through">
-                        {c.originalGrade}
-                      </div>
-                      <div className="text-sm font-semibold text-primary">
-                        {c.convertedGrade}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                onClick={discussInChat}
-                variant="secondary"
-                className="mt-4 w-full"
-              >
-                Discuss this in chat
-              </Button>
-            </section>
-          )}
-        </div>
+          <div className="flex items-center gap-2 text-xs text-[#5A6380]">
+            <ShieldCheck className="h-4 w-4 text-[#01C3AD]" /> Private storage is scoped to your
+            user ID.
+          </div>
+        </aside>
       </div>
-    </AppShell>
+    </PassportShell>
+  );
+}
+
+function Status({ text, error = false }: { text: string; error?: boolean }) {
+  return (
+    <div className={`p-10 text-center text-sm ${error ? "text-[#E65234]" : "text-[#5A6380]"}`}>
+      {text}
+    </div>
+  );
+}
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#9AA3B2]">{label}</p>
+      <p className="mt-1 text-xs font-semibold">{value}</p>
+    </div>
+  );
+}
+function Metric({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-xl bg-white/[.07] p-3 text-center">
+      <p className="text-lg font-black">{value}</p>
+      <p className="text-[9px] uppercase tracking-wide text-white/45">{label}</p>
+    </div>
   );
 }

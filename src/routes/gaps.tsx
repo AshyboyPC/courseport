@@ -1,263 +1,149 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { AppShell } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  Rocket,
-  AlertTriangle,
-  Sparkle,
-} from "lucide-react";
-import { analyzeCurriculumGap } from "@/lib/edu.functions";
-import { toast } from "sonner";
-import { createThread } from "@/lib/threads";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, ArrowRight, Check, CircleHelp, Flag, ShieldAlert } from "lucide-react";
+import { PassportShell, StatusPill } from "@/components/PassportShell";
+import { getGapAnalysis } from "@/lib/scholaport-api";
 
-export const Route = createFileRoute("/gaps")({
-  head: () => ({
-    meta: [
-      { title: "Curriculum Gap Detector · EduBridge AI" },
-      {
-        name: "description",
-        content:
-          "Compare your previous coursework against the new curriculum and see what to catch up on this summer.",
-      },
-    ],
-  }),
-  component: GapPage,
-});
+export const Route = createFileRoute("/gaps")({ component: GapAnalysis });
 
-type Result = Awaited<ReturnType<typeof analyzeCurriculumGap>>;
-
-function GapPage() {
-  const analyze = useServerFn(analyzeCurriculumGap);
-  const navigate = useNavigate();
-  const [previousCurriculum, setPrev] = useState("CBSE India (Class 10)");
-  const [previousCourses, setCourses] = useState(
-    "Mathematics, Science (Physics/Chem/Bio), Social Science, English, Hindi, Computer Applications",
-  );
-  const [targetCurriculum, setTarget] = useState(
-    "California public high school (Grade 10)",
-  );
-  const [gradeLevel, setGrade] = useState("Grade 10");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
-
-  const onSubmit = async () => {
-    setLoading(true);
-    setResult(null);
-    try {
-      const data = await analyze({
-        data: { previousCurriculum, previousCourses, targetCurriculum, gradeLevel },
-      });
-      setResult(data);
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't run the analysis. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const discussInChat = () => {
-    if (!result) return;
-    const text = `Here's my curriculum gap analysis (${previousCurriculum} → ${targetCurriculum}):
-
-**Summary:** ${result.summary}
-
-**Gaps:** ${result.gapsIdentified.join("; ")}
-
-**Ahead in:** ${result.acceleratedPlacement.join("; ")}
-
-What should I tackle first?`;
-    const t = createThread({
-      title: `Gap plan · ${targetCurriculum}`,
-      messages: [
-        {
-          id: crypto.randomUUID(),
-          role: "user",
-          parts: [{ type: "text", text }],
-        },
-      ],
-    });
-    navigate({ to: "/chat/$threadId", params: { threadId: t.id } });
-  };
-
+function GapAnalysis() {
+  const query = useQuery({ queryKey: ["gap-analysis"], queryFn: getGapAnalysis });
+  const analysis = query.data?.analysis;
+  const requirements = query.data?.requirements ?? [];
+  const gaps = requirements.filter((item) => item.credits_remaining > 0);
   return (
-    <AppShell title="Gap Analysis">
-      <div className="h-full overflow-y-auto">
-        <div className="mx-auto w-full max-w-2xl space-y-5 p-4 pb-8">
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-card">
-            <h1 className="font-display text-lg font-semibold">
-              Curriculum Gap Detector
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Tell us what you've studied and where you're heading. We'll flag
-              gaps, fast-tracks and a study list.
-            </p>
-
-            <div className="mt-4 space-y-3">
+    <PassportShell
+      eyebrow="Graduation requirements"
+      title={analysis ? `${gaps.length} gaps. One clear plan.` : "Your gap analysis"}
+      description="Scholaport shows only the graduation analysis stored in your Academic Passport. Your school makes the final credit decision."
+      action={
+        <Link
+          to="/roadmap"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#01C3AD] px-4 text-sm font-bold text-[#060F3D]"
+        >
+          Open roadmap <ArrowRight className="h-4 w-4" />
+        </Link>
+      }
+    >
+      {query.isLoading ? (
+        <State text="Loading your gap analysis…" />
+      ) : query.error ? (
+        <State
+          text={query.error instanceof Error ? query.error.message : "Unable to load gap analysis."}
+          error
+        />
+      ) : !analysis ? (
+        <State text="No gap analysis exists for your account yet. Uploading a transcript does not fabricate one; it will appear after the analysis service is implemented." />
+      ) : (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,.7fr)]">
+          <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white p-6 shadow-card">
+            <div className="flex items-center justify-between border-b border-[#E8EBF0] pb-5">
               <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Previous curriculum
-                </Label>
-                <Input
-                  value={previousCurriculum}
-                  onChange={(e) => setPrev(e.target.value)}
-                  placeholder="e.g. UK GCSE, CBSE India, French Bac"
-                />
+                <StatusPill tone={gaps.length ? "coral" : "teal"}>
+                  <ShieldAlert className="mr-1 h-3 w-3" />
+                  {gaps.length ? "Attention needed" : "On track"}
+                </StatusPill>
+                <h2 className="mt-3 font-display text-xl font-bold">Credit coverage by subject</h2>
               </div>
-              <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Courses already taken
-                </Label>
-                <Textarea
-                  rows={3}
-                  value={previousCourses}
-                  onChange={(e) => setCourses(e.target.value)}
-                  placeholder="Comma separated"
-                />
+              <div className="text-right">
+                <p className="text-3xl font-black">
+                  {analysis.total_credits_mapped}
+                  <span className="text-base text-[#9AA3B2]">
+                    {" "}
+                    / {analysis.total_credits_required}
+                  </span>
+                </p>
+                <p className="text-xs text-[#5A6380]">mapped credits</p>
               </div>
-              <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Target curriculum / district
-                </Label>
-                <Input
-                  value={targetCurriculum}
-                  onChange={(e) => setTarget(e.target.value)}
-                  placeholder="e.g. Texas public high school, IB DP, Ontario"
-                />
-              </div>
-              <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Entering grade
-                </Label>
-                <Select value={gradeLevel} onValueChange={setGrade}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Grade 9", "Grade 10", "Grade 11", "Grade 12"].map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={onSubmit}
-                disabled={loading}
-                className="h-11 w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing…
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="mr-2 h-4 w-4" /> Run gap analysis
-                  </>
-                )}
-              </Button>
+            </div>
+            <div className="mt-5 space-y-4">
+              {requirements.map((item) => {
+                const percent = item.credits_required
+                  ? Math.min(100, Math.round((item.credits_mapped / item.credits_required) * 100))
+                  : 100;
+                return (
+                  <div key={item.id} className="rounded-2xl border border-[#E8EBF0] p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`grid h-8 w-8 place-items-center rounded-full ${item.credits_remaining <= 0 ? "bg-[#01C3AD]/10 text-[#019A8A]" : "bg-[#F86746]/10 text-[#E65234]"}`}
+                        >
+                          {item.credits_remaining <= 0 ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <AlertTriangle className="h-4 w-4" />
+                          )}
+                        </span>
+                        <div>
+                          <p className="text-sm font-bold">{item.subject_category}</p>
+                          <p className="text-[11px] text-[#9AA3B2]">
+                            {item.credits_mapped} of {item.credits_required} credits mapped
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black">{percent}%</span>
+                    </div>
+                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#E8EBF0]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${percent}%`,
+                          background: item.credits_remaining <= 0 ? "#01C3AD" : "#F86746",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
-
-          {result && (
-            <section className="space-y-3">
-              <SummaryCard summary={result.summary} />
-              <GapList
-                title="Credits likely to transfer"
-                items={result.creditsTransferred}
-                icon={<CheckCircle2 className="h-4 w-4 text-success" />}
-                tone="success"
-              />
-              <GapList
-                title="Gaps to close this summer"
-                items={result.gapsIdentified}
-                icon={<AlertTriangle className="h-4 w-4 text-warning" />}
-                tone="warning"
-              />
-              <GapList
-                title="You're already ahead in"
-                items={result.acceleratedPlacement}
-                icon={<Rocket className="h-4 w-4 text-primary" />}
-                tone="primary"
-              />
-              <GapList
-                title="Recommended next steps"
-                items={result.recommendedNextSteps}
-                icon={<Sparkle className="h-4 w-4 text-accent" />}
-                tone="accent"
-              />
-
-              <Button
-                onClick={discussInChat}
-                variant="secondary"
-                className="w-full"
+          <aside className="space-y-5">
+            <section className="rounded-[24px] bg-[#0A175A] p-6 text-white">
+              <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#01C3AD]">
+                Analysis summary
+              </p>
+              <h2 className="mt-3 font-display text-xl font-bold">
+                {analysis.analysis_summary ??
+                  "Review the remaining requirements with your counselor."}
+              </h2>
+              <div className="mt-5 space-y-2.5">
+                {gaps.map((gap) => (
+                  <div
+                    key={gap.id}
+                    className="flex items-center gap-3 rounded-xl bg-white/[.07] p-3"
+                  >
+                    <Flag className="h-4 w-4 text-[#F86746]" />
+                    <div>
+                      <p className="text-sm font-bold">{gap.subject_category}</p>
+                      <p className="text-[10px] text-white/45">
+                        {gap.credits_remaining} credits remaining
+                      </p>
+                    </div>
+                    <span className="ml-auto text-[10px] font-bold uppercase text-[#FA8A70]">
+                      {gap.priority}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <Link
+                to="/advisor"
+                className="mt-5 flex h-11 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-[#0A175A]"
               >
-                Discuss this in chat
-              </Button>
+                <CircleHelp className="h-4 w-4" /> Ask the advisor
+              </Link>
             </section>
-          )}
+          </aside>
         </div>
-      </div>
-    </AppShell>
+      )}
+    </PassportShell>
   );
 }
-
-function SummaryCard({ summary }: { summary: string }) {
+function State({ text, error = false }: { text: string; error?: boolean }) {
   return (
-    <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-primary">
-        Summary
-      </div>
-      <p className="mt-1 text-sm text-foreground">{summary}</p>
-    </div>
-  );
-}
-
-function GapList({
-  title,
-  items,
-  icon,
-}: {
-  title: string;
-  items: string[];
-  icon: React.ReactNode;
-  tone: "success" | "warning" | "primary" | "accent";
-}) {
-  if (!items?.length) return null;
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-      <div className="mb-2 flex items-center gap-2">
-        {icon}
-        <h2 className="font-display text-sm font-semibold">{title}</h2>
-      </div>
-      <ul className="space-y-1.5">
-        {items.map((it, i) => (
-          <li
-            key={i}
-            className="flex gap-2 text-sm leading-snug text-foreground"
-          >
-            <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
-            {it}
-          </li>
-        ))}
-      </ul>
+    <div
+      className={`rounded-[24px] border border-[#CDD3DE]/70 bg-white p-10 text-center text-sm shadow-card ${error ? "text-[#E65234]" : "text-[#5A6380]"}`}
+    >
+      {text}
     </div>
   );
 }

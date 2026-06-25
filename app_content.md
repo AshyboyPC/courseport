@@ -1,0 +1,820 @@
+# App Text Content
+
+### routeTree.gen.ts
+- > config: Awaited
+- , path:
+- , getParentRoute: () => rootRouteImport, } as any) const ChatIndexRoute = ChatIndexRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) const ChatThreadIdRoute = ChatThreadIdRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) const ApiChatRoute = ApiChatRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) const ApiAdvisorRoute = ApiAdvisorRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) const ApiV1TranscriptsRoute = ApiV1TranscriptsRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) const ApiV1ReferenceRoute = ApiV1ReferenceRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) const ApiV1PassportRoute = ApiV1PassportRouteImport.update({ id:
+- , getParentRoute: () => rootRouteImport, } as any) export interface FileRoutesByFullPath {
+- : typeof IndexRoute
+- : typeof AdvisorRoute
+- : typeof GapsRoute
+- : typeof GuideRoute
+- : typeof LoginRoute
+- : typeof OnboardingRoute
+- : typeof PacketRoute
+- : typeof PathmatchRoute
+- : typeof ProfileRoute
+- : typeof RoadmapRoute
+- : typeof TranscriptRoute
+- : typeof TwinsRoute
+- : typeof ApiAdvisorRoute
+- : typeof ApiChatRoute
+- : typeof ChatThreadIdRoute
+- : typeof ChatIndexRoute
+- : typeof ApiV1PassportRoute
+- : typeof ApiV1ReferenceRoute
+- : typeof ApiV1TranscriptsRoute } export interface FileRoutesByTo {
+- : typeof ApiV1TranscriptsRoute } export interface FileRoutesById { __root__: typeof rootRouteImport
+- : typeof ApiV1TranscriptsRoute } export interface FileRouteTypes { fileRoutesByFullPath: FileRoutesByFullPath fullPaths: |
+- fileRoutesByTo: FileRoutesByTo to: |
+- id: |
+- fileRoutesById: FileRoutesById } export interface RootRouteChildren { IndexRoute: typeof IndexRoute AdvisorRoute: typeof AdvisorRoute GapsRoute: typeof GapsRoute GuideRoute: typeof GuideRoute LoginRoute: typeof LoginRoute OnboardingRoute: typeof OnboardingRoute PacketRoute: typeof PacketRoute PathmatchRoute: typeof PathmatchRoute ProfileRoute: typeof ProfileRoute RoadmapRoute: typeof RoadmapRoute TranscriptRoute: typeof TranscriptRoute TwinsRoute: typeof TwinsRoute ApiAdvisorRoute: typeof ApiAdvisorRoute ApiChatRoute: typeof ApiChatRoute ChatThreadIdRoute: typeof ChatThreadIdRoute ChatIndexRoute: typeof ChatIndexRoute ApiV1PassportRoute: typeof ApiV1PassportRoute ApiV1ReferenceRoute: typeof ApiV1ReferenceRoute ApiV1TranscriptsRoute: typeof ApiV1TranscriptsRoute } declare module
+- { interface FileRoutesByPath {
+- : { id:
+- preLoaderRoute: typeof TwinsRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof TranscriptRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof RoadmapRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ProfileRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof PathmatchRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof PacketRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof OnboardingRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof LoginRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof GuideRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof GapsRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof AdvisorRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof IndexRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ChatIndexRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ChatThreadIdRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ApiChatRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ApiAdvisorRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ApiV1TranscriptsRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ApiV1ReferenceRouteImport parentRoute: typeof rootRouteImport }
+- preLoaderRoute: typeof ApiV1PassportRouteImport parentRoute: typeof rootRouteImport } } } const rootRouteChildren: RootRouteChildren = { IndexRoute: IndexRoute, AdvisorRoute: AdvisorRoute, GapsRoute: GapsRoute, GuideRoute: GuideRoute, LoginRoute: LoginRoute, OnboardingRoute: OnboardingRoute, PacketRoute: PacketRoute, PathmatchRoute: PathmatchRoute, ProfileRoute: ProfileRoute, RoadmapRoute: RoadmapRoute, TranscriptRoute: TranscriptRoute, TwinsRoute: TwinsRoute, ApiAdvisorRoute: ApiAdvisorRoute, ApiChatRoute: ApiChatRoute, ChatThreadIdRoute: ChatThreadIdRoute, ChatIndexRoute: ChatIndexRoute, ApiV1PassportRoute: ApiV1PassportRoute, ApiV1ReferenceRoute: ApiV1ReferenceRoute, ApiV1TranscriptsRoute: ApiV1TranscriptsRoute, } export const routeTree = rootRouteImport ._addFileChildren(rootRouteChildren) ._addFileTypes<FileRouteTypes>() import type { getRouter } from
+- import type { startInstance } from
+
+### server.ts
+- Promise
+- | undefined; async function getServerEntry(): Promise
+- ; if (!contentType.includes(
+- )) return response; const body = await response.clone().text(); if (!body.includes(
+- ) || !body.includes(
+- )) { return response; } console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`)); return new Response(renderErrorPage(), { status: 500, headers: {
+
+### components/AppShell.tsx
+- Your academic passport
+- Your chats
+- New chat
+- No chats yet. Start one above.
+- > <span className=
+- >{title ??
+- > <GraduationCap className=
+- > {TABS.map((t) => { const active = location.pathname.startsWith(t.match); const Icon = t.icon; return ( <Link key={t.to} to={t.to} className={cn(
+- , active ?
+- Open chats
+- > <Button onClick={onNew} className=
+- > <Plus className=
+- > {threads.length === 0 && ( <li className=
+- Untitled chat
+- Delete chat
+
+### components/PassportShell.tsx
+- Discover
+- Help & safety
+- Settings
+- Passport 78% complete
+- , label:
+- , icon: Home }, { to:
+- , icon: FileText }, { to:
+- , icon: Map }, { to:
+- , icon: Bot }, { to:
+- , icon: UserRound }, ]; const discoverNav = [ { to:
+- , icon: Compass }, { to:
+- , icon: Sparkles }, { to:
+- , icon: UsersRound }, { to:
+- , icon: FileCheck2 }, { to:
+- , icon: BookOpen }, ]; export function PassportShell({ children, eyebrow, title, description, action, }: { children: React.ReactNode; eyebrow?: string; title?: string; description?: string; action?: React.ReactNode; }) { const [mobileOpen, setMobileOpen] = useState(false); const location = useLocation(); return ( <div className=
+- > <aside className=
+- > <div className=
+- > <ScholaportLogo className=
+- > <button className=
+- > <HelpCircle className=
+- > <Settings className=
+- > <button aria-label=
+- onClick={() => setMobileOpen(false)} > <X className=
+- > <header className=
+- onClick={() => setMobileOpen(true)} > <Menu className=
+- > <Search className=
+- > <span className=
+- > {(title || eyebrow || description || action) && ( <div className=
+- > {eyebrow && ( <p className=
+- > {primaryNav.map((item) => { const active = item.to ===
+- ? location.pathname ===
+- : location.pathname.startsWith(item.to); const Icon = item.icon; return ( <Link key={item.to} to={item.to} className={cn(
+- , active ?
+- ? pathname ===
+- : pathname.startsWith(item.to); const Icon = item.icon; return ( <Link key={item.to} to={item.to} onClick={onNavigate} className={cn(
+- , )} > <Icon className=
+- && ( <span className={cn(
+- mt-0.5 text-sm font-black
+
+### components/ChatView.tsx
+- (() => getThread(threadId)?.messages ?? []); const composerRef = useRef
+- Hey, I'm Scholaport.
+- Your friendly copilot for landing in a new school system — transcripts, credits, culture and all.
+- ) : ( messages.map((m) => (
+- Scholaport
+- Thinking…
+- ; import type { UIMessage } from
+- ; import { Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton, } from
+- ; import { Message, MessageContent, MessageResponse } from
+- ; import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit, type PromptInputMessage, } from
+- ; import { Shimmer } from
+- ; import { GraduationCap } from
+- ; import { getThread, saveThreadMessages } from
+- ; import { ScholaportLogo } from
+- ; const STARTERS = [
+- s the difference between an honors class and AP?
+- I just moved from the UK — how do A-Levels map to a US schedule?
+- How should I survive my first month of an AP class?
+- , ) as HTMLTextAreaElement | null; ta?.focus(); }; useEffect(() => { focusComposer(); }, [threadId]); useEffect(() => { if (status ===
+- ) focusComposer(); }, [status]); const onSubmit = (message: PromptInputMessage) => { const text = message.text.trim(); if (!text || status ===
+- || status ===
+- ) return; sendMessage({ text }); }; const isEmpty = messages.length === 0; return ( <div className=
+- > <Conversation> <ConversationContent className=
+- > {isEmpty ? ( <ConversationEmptyState className=
+- > <div className=
+- > <ScholaportLogo className=
+- > <h3 className=
+- >Hey, I
+- Ask about GPA, AP, IB, credits…
+
+### components/ScholaportLogo.tsx
+- Scholaport
+- relative aspect-square h-full shrink-0 overflow-hidden rounded-[24%] bg-white
+- absolute inset-0 h-full w-full scale-[1.62] object-cover
+- font-display text-xl font-bold tracking-[-0.04em]
+
+### lib/edu.functions.ts
+- ; import { z } from
+- ; import { createLovableAiGatewayProvider, DEFAULT_CHAT_MODEL } from
+- ; const TranscriptInput = z.object({ imageDataUrl: z.string().optional(), rawText: z.string().optional(), targetSystem: z.string().default(
+- ), }); const CourseSchema = z.object({ course: z.string(), year: z.string(), originalGrade: z.string(), convertedGrade: z.string(), creditsLikely: z.string(), }); const TranscriptOutput = z.object({ country: z.string(), originalScale: z.string(), convertedGpa: z.string(), summary: z.string(), courses: z.array(CourseSchema), }); export const convertTranscript = createServerFn({ method:
+- }) .inputValidator((data: unknown) => TranscriptInput.parse(data)) .handler(async ({ data }) => { const apiKey = process.env.LOVABLE_API_KEY; if (!apiKey) throw new Error(
+- ); if (!data.imageDataUrl && !data.rawText) throw new Error(
+- ). 5. Write a 2-3 sentence plain-language
+- the student can read. Be conservative — if the scale is ambiguous, say so in the summary.`; const userContent: Array<{ type:
+- ; text: string } | { type:
+- ; image: string }> = []; if (data.rawText) { userContent.push({ type:
+- , text: `Transcript text:\n\n${data.rawText}`, }); } if (data.imageDataUrl) { userContent.push({ type:
+- , text:
+- , }); userContent.push({ type:
+- , image: data.imageDataUrl }); } const { output } = await generateText({ model: gateway(DEFAULT_CHAT_MODEL), system, messages: [{ role:
+- , content: userContent }], experimental_output: Output.object({ schema: TranscriptOutput }), }); return output; }); const GapInput = z.object({ previousCurriculum: z.string().min(1), previousCourses: z.string().min(1), targetCurriculum: z.string().min(1), gradeLevel: z.string().default(
+- ), }); const GapOutput = z.object({ creditsTransferred: z.array(z.string()), gapsIdentified: z.array(z.string()), acceleratedPlacement: z.array(z.string()), recommendedNextSteps: z.array(z.string()), summary: z.string(), }); export const analyzeCurriculumGap = createServerFn({ method:
+- }) .inputValidator((data: unknown) => GapInput.parse(data)) .handler(async ({ data }) => { const apiKey = process.env.LOVABLE_API_KEY; if (!apiKey) throw new Error(
+- ); const gateway = createLovableAiGatewayProvider(apiKey); const { output } = await generateText({ model: gateway(DEFAULT_CHAT_MODEL), system: `You are an academic placement specialist for international transfer students. Compare the student
+
+### lib/threads.ts
+- ; export interface ThreadRecord { id: string; title: string; updatedAt: number; messages: UIMessage[]; } const KEY =
+- ; const isBrowser = () => typeof window !==
+- ; function readAll(): ThreadRecord[] { if (!isBrowser()) return []; try { const raw = window.localStorage.getItem(KEY); if (!raw) return []; const parsed = JSON.parse(raw) as ThreadRecord[]; return Array.isArray(parsed) ? parsed : []; } catch { return []; } } function writeAll(threads: ThreadRecord[]) { if (!isBrowser()) return; window.localStorage.setItem(KEY, JSON.stringify(threads)); window.dispatchEvent(new CustomEvent(
+- )); } export function listThreads(): ThreadRecord[] { return readAll().sort((a, b) => b.updatedAt - a.updatedAt); } export function getThread(id: string): ThreadRecord | undefined { return readAll().find((t) => t.id === id); } function newId() { if (isBrowser() &&
+- in window &&
+- in window.crypto) { return window.crypto.randomUUID(); } return `t_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`; } export function createThread(initial?: Partial<ThreadRecord>): ThreadRecord { const thread: ThreadRecord = { id: initial?.id ?? newId(), title: initial?.title ??
+- , updatedAt: Date.now(), messages: initial?.messages ?? [], }; const all = readAll(); writeAll([thread, ...all.filter((t) => t.id !== thread.id)]); return thread; } export function ensureInitialThread(): ThreadRecord { const all = readAll(); if (all.length > 0) { return all.sort((a, b) => b.updatedAt - a.updatedAt)[0]!; } return createThread({ title:
+- }); } export function saveThreadMessages(id: string, messages: UIMessage[]) { const all = readAll(); const existing = all.find((t) => t.id === id); const title = deriveTitle(messages) ?? existing?.title ??
+- ; const next: ThreadRecord = { id, title, updatedAt: Date.now(), messages, }; const others = all.filter((t) => t.id !== id); writeAll([next, ...others]); } export function deleteThread(id: string) { writeAll(readAll().filter((t) => t.id !== id)); } export function renameThread(id: string, title: string) { const all = readAll(); const idx = all.findIndex((t) => t.id === id); if (idx === -1) return; all[idx] = { ...all[idx]!, title, updatedAt: Date.now() }; writeAll(all); } function deriveTitle(messages: UIMessage[]): string | null { const first = messages.find((m) => m.role ===
+- ); if (!first) return null; const text = first.parts .filter((p) => p.type ===
+- ) .map((p) => (p as { text: string }).text) .join(
+- ) .trim(); if (!text) return null; return text.length > 48 ? text.slice(0, 45) +
+
+### lib/error-page.ts
+- This page didn't load
+- Something went wrong on our end. You can try refreshing or head back home.
+- Try again
+- Go home
+- > <head> <meta charset=
+- width=device-width, initial-scale=1
+- > <button class=
+
+### lib/scholaport-data.ts
+- Maya Patel
+- , origin:
+- , originCode:
+- , curriculum:
+- , target:
+- , targetCode:
+- , grade:
+- , school:
+- , graduation:
+- , passportId:
+- , }; export const requirements = [ { subject:
+- , short:
+- , earned: 3, required: 4, status:
+- as RequirementStatus, color:
+- , }, { subject:
+- , earned: 4, required: 4, status:
+- , earned: 2, required: 3, status:
+- , earned: 1, required: 1, status:
+- , earned: 5, required: 8, status:
+- , }, ]; export const courseMappings: CourseMapping[] = [ { id:
+- , original:
+- , translated:
+- , category:
+- , equivalent:
+- , credits: 1, confidence:
+- , }, { id:
+- , credits: 0.5, confidence:
+- , }, ]; export const roadmap = [ { term:
+- , date:
+- , title:
+- , detail:
+- , type:
+- , status:
+- , }, { term:
+- , }, ]; export const pathMatches = [ { name:
+- CBSE · India → Georgia
+- Graduated on time
+- U.S. History did not transfer
+- Ask about a summer government course before schedules lock.
+- , route:
+- , similarity: 88, program:
+- , outcome:
+- , challenge:
+- , advice:
+- , transferred: [
+- World Language
+- , similarity: 82, program:
+- Social Studies
+- Credits, decoded
+- How a U.S. credit works—and why one class can count differently.
+- , icon:
+- , description:
+- , time:
+- , }, { slug:
+- , }, ]; export const advisorStarters = [
+
+### lib/ai-gateway.server.ts
+- https: headers: {
+- : apiKey, }, }); } export const DEFAULT_CHAT_MODEL =
+
+### routes/index.tsx
+- Build counselor packet
+- Verified profile
+- Issued 19 Jun 2026
+- CURRENT SCHOOL
+- EXPECTED GRADUATION
+- PASSPORT ID
+- Graduation progress
+- On your way
+- See full gap analysis
+- Your route forward
+- Next three checkpoints
+- Open roadmap
+- PathMatch insight
+- 94% match with a student who made your same move
+- Aarav transferred from CBSE to Georgia in grade 11. His biggest unlock was completing Government online before senior year.
+- AK
+- CBSE → Georgia
+- Honors · graduated on time
+- Explore similar paths
+- )({ head: () => ({ meta: [ { title:
+- }, { name:
+- , content:
+- title={`Good afternoon, ${student.firstName}.`} description=
+- action={ <Link to=
+- > <FileCheck2 className=
+- > <section className=
+- > <div className=
+- > <div> <div className=
+- > <StatusPill tone=
+- > <ShieldCheck className=
+- > <span className=
+- > <div> <p className=
+- > <PassportStamp label=
+- > {earned} <span className=
+- > {requirements.slice(0, 4).map((item) => ( <div key={item.subject} className=
+- > See full gap analysis <ArrowRight className=
+- > <QuickAction to=
+- > {roadmap.slice(0, 3).map((item, index) => ( <div key={item.title} className=
+- > {index < 2 && ( <span className=
+- border border-[#CDD3DE] bg-white text-[#9AA3B2]
+- mt-1 text-xs leading-5 text-[#5A6380]
+- hidden text-[11px] font-semibold text-[#9AA3B2] sm:block
+- absolute right-5 top-5 h-6 w-6 text-[#01C3AD]
+- mt-2 max-w-xs font-display text-xl font-bold leading-7 tracking-[-0.03em]
+- mt-3 max-w-md text-sm leading-6 text-[#5A6380]
+- r={radius} fill=
+- mt-1.5 block text-xs leading-5 text-[#5A6380]
+- ml-auto mt-2 h-4 w-4 shrink-0 text-[#CDD3DE] transition group-hover:translate-x-0.5 group-hover:text-[#01C3AD]
+
+### routes/__root.tsx
+- Page not found
+- That page isn't stamped in Scholaport — let's get you back on route.
+- Go home
+- This page didn't load
+- Something went wrong on our end. Try again or head back home.
+- Try again
+- t stamped in Scholaport — let
+- }); }, [error]); return ( <div className=
+- > <div className=
+- > <h1 className=
+- >This page didn
+- }, { name:
+- , content:
+- , }, { name:
+- }, { title:
+- }, { property:
+- , }, { property:
+- }, ], links: [{ rel:
+- , href: appCss }], }), shellComponent: RootShell, component: RootComponent, notFoundComponent: NotFoundComponent, errorComponent: ErrorComponent, }); function RootShell({ children }: { children: ReactNode }) { return ( <html lang=
+
+### routes/roadmap.tsx
+- Add to calendar
+- On-track route
+- Four checkpoints between today and your diploma.
+- This plan keeps senior-year capacity open and uses one flexible online course to reduce schedule pressure.
+- Timeline
+- Your checkpoints
+- Class of 2027
+- Do this first
+- Alternative path
+- Summer completion
+- If fall feels crowded, complete both Health and Government through an approved summer provider.
+- Schedule pressure
+- Take this plan to your counselor
+- Add the roadmap, course map, and your questions to one meeting-ready packet.
+- Build packet
+- Plans can change
+- Update any confirmed counselor decisions and Scholaport recalculates the route.
+- Academic Roadmap · Scholaport
+- A semester-by-semester plan for closing graduation gaps on time.
+- Checkpoint reopened.
+- Checkpoint stamped complete.
+- Academic roadmap
+- Your fastest safe route to graduation.
+- A practical semester-by-semester plan built from your probable transfer credits, Georgia requirements, and the time you have left.
+- Roadmap added to your counselor packet.
+- relative overflow-hidden rounded-[24px] bg-[#0A175A] p-5 text-white shadow-[0_16px_40px_rgba(10,23,90,.16)] sm:p-7
+- mt-4 max-w-2xl font-display text-2xl font-bold leading-8 tracking-[-0.04em] sm:text-3xl
+- > <section className=
+- > <div className=
+- > <div> <p className=
+- > {roadmap.map((item, index) => { const complete = state.completedRoadmapItems.includes(item.title); const Icon = item.type ===
+- ? MessageSquareText : item.type ===
+- ? Laptop : School; return ( <article key={item.title} className=
+- > {index < roadmap.length - 1 && ( <span className=
+- : index === 0 ?
+- border border-[#CDD3DE] bg-white text-[#9AA3B2]
+- > {complete ?
+- Stamp complete
+- mt-0.5 text-sm font-bold
+- mt-4 text-xs leading-5 text-[#5A6380]
+- mt-4 rounded-xl bg-[#F6F8FB] p-3
+- font-black text-[#019A8A]
+- mt-2 h-1.5 overflow-hidden rounded-full bg-[#E8EBF0]
+- h-full w-[72%] rounded-full bg-[#01C3AD]
+- group block rounded-[24px] bg-[#01C3AD] p-5 text-[#060F3D] shadow-[0_10px_28px_rgba(1,195,173,.2)]
+- h-5 w-5 shrink-0 text-[#0A175A]
+- mt-1 text-xs leading-5 text-[#5A6380]
+
+### routes/login.tsx
+- Your education crosses borders. Your clarity should, too.
+- Translate transcripts, map probable credits, find graduation gaps, and walk into your counselor meeting ready.
+- Scholaport · Educational guidance, not official credential evaluation
+- Welcome back
+- Continue your journey.
+- Sign in to your academic passport.
+- Email
+- Password
+- Remember me
+- Forgot password?
+- OR CONTINUE WITH
+- Google
+- Create your passport
+- Sign in · Scholaport
+- }), 500); }; return ( <main className=
+- > <section className=
+- > <div className=
+- > <span className=
+- > <Plane className=
+- > <Benefit text=
+- > <ScholaportLogo className=
+- > <label> <span className=
+- > <Mail className=
+- required defaultValue=
+- > <LockKeyhole className=
+- font-bold text-[#019A8A]
+- Opening passport…
+- Sign in
+- mt-7 text-center text-xs text-[#5A6380]
+- } <Link to=
+- > <Check className=
+
+### routes/transcript.tsx
+- (null); const [step, setStep] = useState
+- ("review"); const [fileName, setFileName] = useState("CBSE_Class_10_Marksheet.pdf"); const [expanded, setExpanded] = useState
+- Drop a transcript here
+- PDF, JPG, PNG, or a clear camera scan. Up to 50 MB and multiple pages.
+- Choose a file
+- Private, encrypted, and owned by you
+- Reading your academic story
+- Detecting tables, translating course meaning, normalizing grades, and comparing Georgia requirements.
+- Translated course map
+- Replace file
+- OCR complete
+- Probable equivalent
+- View original region
+- Correct extraction
+- Mapping summary
+- One course needs supporting material before a counselor can confirm the credit.
+- Continue to gap analysis
+- Academic, not literal
+- Translation preserves course level and meaning—not just words.
+- Mark review complete
+- Transcript · Scholaport
+- Upload, translate, and map your international transcript to probable U.S. high-school credits.
+- Please keep the file under 50 MB.
+- Transcript translated and mapped.
+- Transcript intelligence
+- Bring your learning with you.
+- Upload a transcript in any language. Scholaport extracts each course, translates academic meaning, and prepares probable U.S. credit matches for counselor review.
+- } done={step ===
+- } number=
+- } done={false} number=
+- && ( <section className=
+- > <input ref={inputRef} type=
+- > <span className=
+- > <UploadCloud className=
+- > <ShieldCheck className=
+- > <div> <div className=
+- > <ScanLine className=
+- > <Loader2 className=
+- && ( <div className=
+- > <section className=
+- > <div className=
+- > <FileText className=
+- > <button onClick={() => setStep(
+- )} className=
+- > <CheckCircle2 className=
+- > {courseMappings.map((course) => { const isOpen = expanded === course.id; return ( <article key={course.id}> <button onClick={() => setExpanded(isOpen ? null : course.id)} className=
+- > <div> <p className=
+- > <p className=
+- > <Detail label=
+- value={ course.confidence ===
+- > <button className=
+- > <Eye className=
+- > <Edit3 className=
+- > <Metric value=
+- > Continue to gap analysis <ArrowRight className=
+- > <Languages className=
+- > <Check className=
+- h-3.5 w-3.5
+
+### routes/advisor.tsx
+- Passport connected
+- Answer language
+- English
+- Change language
+- Scholaport provides educational guidance, not official credential evaluation. Your school decides final credit.
+- Scholaport Advisor
+- Grounded in your academic passport
+- Online
+- Scholaport may be uncertain. Confirm official decisions with your school counselor.
+- AI Academic Advisor · Scholaport
+- Ask context-aware questions about your transcript, graduation requirements, and next steps.
+- Hi Maya—your passport is loaded. I can see your CBSE course map, Georgia requirements, and current roadmap. What would make your transfer feel clearer today?
+- Student passport
+- Georgia requirements
+- ); const [loading, setLoading] = useState(false); const endRef = useRef<HTMLDivElement>(null); useEffect(() => endRef.current?.scrollIntoView({ behavior:
+- }), [messages, loading]); const ask = async (text: string) => { const question = text.trim(); if (!question || loading) return; setInput(
+- ); setMessages((current) => [ ...current, { id: crypto.randomUUID(), role:
+- , content: question }, ]); setLoading(true); try { const response = await fetch(
+- , { method:
+- , headers: {
+- I couldn’t reach the advisor service. Your passport is safe—please try again in a moment.
+- Ask with your full passport in context.
+- Get grounded guidance based on your courses, target state, and roadmap—not a generic chatbot answer.
+- rounded-[24px] bg-[#0A175A] p-5 text-white
+- CBSE transcript
+- Course credit map
+- Graduation gaps
+- Academic roadmap
+- h-5 w-5 text-[#019A8A]
+- mt-4 h-10 w-full rounded-xl bg-[#F6F8FB] text-xs font-bold
+- px-2 text-[10px] leading-4 text-[#9AA3B2]
+- absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-[#01C3AD]
+- ml-auto h-4 w-4 text-[#9AA3B2]
+- rounded-2xl rounded-tl-sm border border-[#E8EBF0] bg-white px-4 py-3 shadow-soft
+- h-1.5 w-1.5 animate-bounce rounded-full bg-[#01C3AD]
+- h-1.5 w-1.5 animate-bounce rounded-full bg-[#01C3AD] [animation-delay:120ms]
+- h-1.5 w-1.5 animate-bounce rounded-full bg-[#01C3AD] [animation-delay:240ms]
+- Ask about credits, GPA, your counselor meeting…
+- mt-2 text-center text-[9px] text-[#9AA3B2]
+- }`}> {!user && ( <span className=
+- > <Bot className=
+- rounded-tl-sm border border-[#E8EBF0] bg-white text-[#0A175A] shadow-soft
+- h-2.5 w-2.5
+- h-3.5 w-3.5 text-[#01C3AD]
+
+### routes/guide.tsx
+- topic.slug === active); return (
+- Start here · 12 minutes
+- Your first week, decoded.
+- From bell schedules to talking with teachers: the calm orientation we wish every transfer student received.
+- Open starter guide
+- Close
+- In the U.S., course credit is the unit schools use to count progress toward graduation. A full-year class is often worth 1.0 credit and a semester class 0.5, but district rules can differ.
+- What matters for a transfer student
+- • Course names are only one piece—the school may review content, duration, and assessments.
+- • State minimums and your school’s own requirements can both apply.
+- • A probable Scholaport match helps you ask better questions; the counselor confirms the official result.
+- Passport tip
+- Bring syllabi for medium- or low-confidence mappings. They often answer the question faster than a translated course title alone.
+- School Survival Guide · Scholaport
+- ); const [active, setActive] = useState<string | null>(null); const topics = useMemo( () => guideTopics.filter((topic) => `${topic.title} ${topic.description} ${topic.category}` .toLowerCase() .includes(query.toLowerCase()), ), [query], ); const selected = guideTopics.find((topic) => topic.slug === active); return ( <PassportShell eyebrow=
+- > <section className=
+- > <Compass className=
+- > <StatusPill tone=
+- > Open starter guide <ArrowRight className=
+- > <Search className=
+- > {topics.map((topic) => { const Icon = icons[topic.icon as keyof typeof icons] ?? BookOpen; return ( <button key={topic.slug} onClick={() => setActive(topic.slug)} className=
+- > <div className=
+- > <span className=
+- > <Icon className=
+- > Read guide{
+- } <ArrowRight className=
+- onClick={() => setActive(null)} > <article className=
+- onClick={(event) => event.stopPropagation()} > <div className=
+- > <div> <StatusPill tone=
+- > <p className=
+
+### routes/gaps.tsx
+- Build my roadmap
+- Attention needed
+- Georgia · 2026
+- Credit coverage by subject
+- Advisor summary
+- You appear strong in math and science.
+- The risk is not total academic ability—it’s three specific local requirements that foreign coursework rarely covers.
+- Ask the advisor about this
+- One mapping is still unclear
+- Your “Social Science” course likely counts as a World History elective, but not the U.S. History requirement.
+- Review this mapping
+- Recommended actions
+- Turn gaps into checkpoints
+- Graduation Gap Analysis · Scholaport
+- Compare probable transferred credits with your target state graduation requirements.
+- Georgia graduation requirements
+- Three gaps. One clear plan.
+- Scholaport compares probable transferred credits with Georgia’s state minimums. Your school makes the final decision—this prepares you for it.
+- mt-3 font-display text-xl font-bold tracking-[-0.03em]
+- mt-0.5 text-[11px] text-[#9AA3B2]
+- mt-3 h-2.5 overflow-hidden rounded-full bg-[#E8EBF0]
+- rounded-[24px] bg-[#0A175A] p-5 text-white shadow-[0_12px_30px_rgba(10,23,90,.16)] sm:p-6
+- mt-5 space-y-2.5
+- U.S. History
+- 1.0 credit
+- American Government
+- 0.5 credit
+- mt-0.5 h-5 w-5 shrink-0 text-[#F86746]
+- mt-1.5 text-xs leading-5 text-[#5A6380]
+- h-3.5 w-3.5
+- mt-1.5 font-display text-xl font-bold
+- h-5 w-5 text-[#9AA3B2]
+- > <span className=
+- > <Flag className=
+- > <p className=
+- > <div className=
+
+### routes/pathmatch.tsx
+- ([]); return (
+- Best match: 94%
+- CBSE · Grade 11 · Georgia · Honors
+- Matching on 4 of 5 academic-path dimensions
+- Strong match
+- Filters
+- Biggest challenge
+- What they wish they knew
+- Transferred well
+- View path
+- Your experience can guide the next student.
+- After graduation, contribute an anonymized path—never your name, school ID, or documents.
+- How privacy works
+- PathMatch · Scholaport
+- Anonymized transfer intelligence
+- Someone has taken a path like yours.
+- PathMatch surfaces verified, anonymized patterns from students with similar origins, curricula, destinations, and goals.
+- relative overflow-hidden rounded-[24px] bg-[#0A175A] p-5 text-white sm:p-7
+- mt-4 max-w-2xl font-display text-2xl font-bold tracking-[-0.04em]
+- h-11 w-full rounded-xl border border-[#CDD3DE] bg-white pl-10 pr-4 text-sm outline-none focus:border-[#01C3AD]
+- Search paths by country, state, or program
+- h-3.5 w-3.5
+- mt-5 border-t border-[#E8EBF0] pt-4
+- mt-1.5 text-sm font-semibold
+- mt-4 rounded-xl bg-[#F6F8FB] p-3
+- mt-1.5 text-xs leading-5 text-[#5A6380]
+- h-3 w-3 text-[#01C3AD]
+- Save path
+- > <div className=
+- > <Compass className=
+
+### routes/packet.tsx
+- Export PDF
+- Packet contents
+- Choose what your counselor needs. Original documents remain unchanged.
+- You control this file
+- Scholaport never sends your packet to a school automatically. Download or share it only when you choose.
+- Print
+- Share link
+- Live preview
+- Ready
+- Academic transfer review packet
+- Counselor preview
+- 19 JUN 2026
+- Scholaport estimates 18 probable credits toward Georgia’s 24-credit requirement. Official decisions must be made by the receiving school.
+- Source course
+- Probable equivalent
+- Credit
+- 1. Which translated credits can be confirmed today?
+- 2. Can CBSE Social Science satisfy any Georgia social studies requirement?
+- 3. Which online providers are approved for Health or Government?
+- Educational preview · Not an official credential evaluation
+- Student summary
+- Original transcript
+- Translated course list
+- Probable credit map
+- Graduation gap checklist
+- Counselor questions
+- Academic roadmap
+- PathMatch insight
+- Counselor Packet · Scholaport
+- Opening a print-ready counselor packet.
+- Counselor-ready packet
+- Walk into the meeting prepared.
+- A clear, professional preview of your transcript translation, probable credits, gaps, and questions—built to start a productive official review.
+- mt-2 text-xs leading-5 text-[#5A6380]
+- h-3.5 w-3.5
+- rounded-[20px] bg-[#0A175A] p-5 text-white
+- h-5 w-5 shrink-0 text-[#01C3AD]
+- Secure share link copied.
+- h-4 w-4 text-[#5A6380]
+- mx-auto min-h-[900px] max-w-[760px] bg-white p-7 shadow-[0_14px_40px_rgba(10,23,90,.14)] sm:p-10 print:max-w-none print:shadow-none
+- mt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#019A8A]
+- mt-2 font-display text-3xl font-black tracking-[-0.05em]
+- mt-2 text-sm text-[#5A6380]
+- > <div className=
+- > <PacketDetail label=
+- ) && ( <PacketSection number=
+- > <span className=
+- > {requirements.map((item) => ( <div key={item.subject} className=
+- > <ol className=
+
+### routes/profile.tsx
+- Save changes
+- Verified
+- Academic route
+- Active since June 2026
+- Passport completeness
+- Add counselor-confirmed credits next
+- English
+- हिन्दी
+- Español
+- 中文
+- Sign out
+- Profile & Settings · Scholaport
+- Profile & settings
+- Your passport. Your data. Your choices.
+- Keep your transfer profile current, choose how Scholaport communicates, and control every piece of stored academic data.
+- Profile saved.
+- font-display text-2xl font-black tracking-[-0.04em]
+- mt-1 text-sm text-[#5A6380]
+- h-10 rounded-xl border border-[#CDD3DE] px-4 text-xs font-bold
+- Done editing
+- Edit profile
+- Display name
+- Origin country
+- Source curriculum
+- Grade at transfer
+- > <section className=
+- > <div className=
+- > <MapPin className=
+- > <RouteItem flag=
+- > <h3 className=
+- > <span className=
+- > <SettingsCard title=
+- detail={state.preferredLanguage} action={ <select value={state.preferredLanguage} onChange={(event) => update({ preferredLanguage: event.target.value })} className=
+- action={ <button onClick={() => toast.success(
+- )}> <ChevronRight className=
+- dangerous action={ <button onClick={() => toast.error(
+- > <Link to=
+- > <LogOut className=
+
+### routes/onboarding.tsx
+- Step 1 of 3
+- Where did your learning begin?
+- Choose the country and curriculum shown on your latest transcript.
+- Origin country
+- Source curriculum
+- Step 2 of 3
+- Where are you headed?
+- Scholaport uses your destination to compare the right graduation requirements.
+- Destination country
+- United States
+- Target state
+- Target school (optional)
+- Step 3 of 3
+- Set your graduation goal.
+- This helps Scholaport work backward from your available semesters.
+- Grade at transfer
+- Expected graduation
+- Target program
+- , ]; return (
+- Your data stays yours
+- Passport setup
+- Your route so far
+- Back
+- (step
+- State Board
+- National Curriculum
+- ], Philippines: [
+- ], }; export const Route = createFileRoute(
+- )({ head: () => ({ meta: [{ title:
+- }] }), component: Onboarding, }); function Onboarding() { const navigate = useNavigate(); const [step, setStep] = useState(0); const [origin, setOrigin] = useState(
+- ); const [curriculum, setCurriculum] = useState(
+- ); const [state, setState] = useState(
+- ); const [grade, setGrade] = useState(
+- ); const steps = [ <div key=
+- > <label className=
+- New York
+- Northview High School
+- Start typing a school name
+- > {[
+- ].map((item) => ( <button type=
+- key={item} className={`h-11 rounded-xl border text-xs font-bold ${item ===
+- min-h-dvh bg-[#F6F8FB] px-4 py-5 sm:p-8
+- relative hidden bg-[#0A175A] p-7 text-white lg:block
+- Academic origin
+- Graduation goal
+- h-5 w-5 text-[#01C3AD]
+- Create passport
+
+### routes/twins.tsx
+- Suggested mentors
+- Matched to your path
+- Ask the mentor pool
+- Matched after moderation
+- Choose a prompt
+- What do you wish you asked your counselor?
+- How did you make friends after transferring?
+- Which credit surprised you most?
+- Your question
+- Post anonymously
+- Submit safely
+- A moderator reviews every question and response before it appears.
+- Best match
+- , name:
+- , route:
+- , topics: [
+- U.S. History
+- Usually replies within a day
+- Counselor meetings
+- ], response:
+- , }, { initials:
+- Social life
+- Twin Connect · Scholaport
+- ); const [anonymous, setAnonymous] = useState(true); const submit = () => { if (!question.trim()) return; toast.success(
+- ); setQuestion(
+- ); }; return ( <PassportShell eyebrow=
+- > <div className=
+- > <section className=
+- > <div> <p className=
+- > <span className=
+- > <MessageCircleQuestion className=
+- > <option className=
+- h-3.5 w-3.5
+- mt-0.5 h-3 w-3 shrink-0
+- Verified mentors
+- Identity and academic path checked by Scholaport.
+- Moderated answers
+- No open DMs or unsupervised contact in the MVP.
+- Academic paths only
+- Profiles exclude precise schools, addresses, and personal contact.
+- mt-0.5 block text-xs text-[#5A6380]
+- rounded-full bg-[#F6F8FB] px-2 py-0.5 text-[9px] font-semibold not-italic text-[#5A6380]
+- h-4 w-4 text-[#CDD3DE] transition group-hover:translate-x-1 group-hover:text-[#01C3AD]
+- mt-1 text-[10px] leading-4 text-[#5A6380]
+
+### routes/chat.index.tsx
+- Loading…
+
+### routes/chat.$threadId.tsx
+- Chat · Scholaport
+- Talk to Scholaport about GPA conversions, AP vs IB, credits and surviving a new school system.
+

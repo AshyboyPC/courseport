@@ -6,6 +6,8 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -19,6 +21,8 @@ import "@fontsource/manrope/600.css";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider, useAuth } from "@/components/AuthProvider";
+import { ScholaportLogo } from "@/components/ScholaportLogo";
 
 function NotFoundComponent() {
   return (
@@ -27,7 +31,7 @@ function NotFoundComponent() {
         <h1 className="font-display text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 font-display text-xl font-semibold">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          That page isn't part of EduBridge — let's get you back on track.
+          That page isn't stamped in Scholaport — let's get you back on route.
         </p>
         <div className="mt-6">
           <Link
@@ -52,9 +56,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="font-display text-xl font-semibold tracking-tight">
-          This page didn't load
-        </h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. Try again or head back home.
         </p>
@@ -88,19 +90,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { name: "theme-color", content: "#0F766E" },
-      { title: "EduBridge AI" },
+      { name: "theme-color", content: "#0A175A" },
+      { title: "Scholaport" },
       {
         name: "description",
         content:
-          "EduBridge AI helps international transfer students convert transcripts, find curriculum gaps, and adapt to a new school system.",
+          "Your student-owned academic passport for translating transcripts, mapping credits, and graduating on time.",
       },
-      { name: "author", content: "EduBridge" },
-      { property: "og:title", content: "EduBridge AI" },
+      { name: "author", content: "Scholaport" },
+      { property: "og:title", content: "Scholaport — Your academic passport" },
       {
         property: "og:description",
         content:
-          "Convert transcripts, spot curriculum gaps, and survive culture shock with an AI academic copilot.",
+          "Translate transcripts, map credits, and cross into your new school system with confidence.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -132,8 +134,75 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
+  );
+}
+
+function AuthGate() {
+  const { configured, loading, user, profile, error } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isLogin = location.pathname === "/login";
+  const isOnboarding = location.pathname === "/onboarding";
+
+  useEffect(() => {
+    if (!configured || loading || error) return;
+    if (!user && !isLogin) {
+      void navigate({ to: "/login", replace: true });
+      return;
+    }
+    if (user && !profile && !isOnboarding) {
+      void navigate({ to: "/onboarding", replace: true });
+      return;
+    }
+    if (user && profile && (isLogin || isOnboarding)) {
+      void navigate({ to: "/", replace: true });
+    }
+  }, [configured, loading, error, user, profile, isLogin, isOnboarding, navigate]);
+
+  if (!configured) {
+    return (
+      <FullPageStatus
+        title="Connect Scholaport to Supabase"
+        description="Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local, then restart the development server. Scholaport does not use demo data when the backend is unavailable."
+      />
+    );
+  }
+  if (loading)
+    return (
+      <FullPageStatus
+        title="Opening your passport…"
+        description="Verifying your secure session and profile."
+      />
+    );
+  if (error)
+    return <FullPageStatus title="Scholaport could not load your account" description={error} />;
+  if (
+    (!user && !isLogin) ||
+    (user && !profile && !isOnboarding) ||
+    (user && profile && (isLogin || isOnboarding))
+  ) {
+    return (
+      <FullPageStatus title="Taking you to the right place…" description="Your session is ready." />
+    );
+  }
+  return <Outlet />;
+}
+
+function FullPageStatus({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="grid min-h-dvh place-items-center bg-[#F6F8FB] px-5">
+      <div className="max-w-lg rounded-[24px] border border-[#CDD3DE]/70 bg-white p-8 text-center shadow-card">
+        <ScholaportLogo className="mx-auto h-14" />
+        <h1 className="mt-6 font-display text-2xl font-black tracking-[-0.04em] text-[#0A175A]">
+          {title}
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-[#5A6380]">{description}</p>
+      </div>
+    </div>
   );
 }

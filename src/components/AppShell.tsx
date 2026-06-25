@@ -1,21 +1,18 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { GraduationCap, MessageCircle, FileText, ListChecks, Menu, Plus, Trash2 } from "lucide-react";
+import {
+  GraduationCap,
+  MessageCircle,
+  FileText,
+  ListChecks,
+  Menu,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/edubridge-logo.png";
-import {
-  createThread,
-  deleteThread,
-  listThreads,
-  type ThreadRecord,
-} from "@/lib/threads";
+import { ScholaportLogo } from "@/components/ScholaportLogo";
+import { createThread, deleteThread, listThreads, type ThreadRecord } from "@/lib/threads";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -44,21 +41,11 @@ export function AppShell({
           {showThreads ? (
             <ThreadsSheet activeThreadId={activeThreadId} />
           ) : (
-            <img
-              src={logo}
-              alt="EduBridge AI"
-              width={28}
-              height={28}
-              className="h-7 w-7"
-            />
+            <ScholaportLogo className="h-7" />
           )}
           <div className="flex flex-col leading-tight">
-            <span className="font-display text-base font-semibold">
-              {title ?? "EduBridge AI"}
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              Your transfer-student copilot
-            </span>
+            <span className="font-display text-base font-semibold">{title ?? "Scholaport"}</span>
+            <span className="text-[11px] text-muted-foreground">Your academic passport</span>
           </div>
         </div>
         <Link to="/" aria-label="Home">
@@ -80,9 +67,7 @@ export function AppShell({
               to={t.to}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="h-5 w-5" />
@@ -103,10 +88,10 @@ function ThreadsSheet({ activeThreadId }: { activeThreadId?: string }) {
   useEffect(() => {
     const refresh = () => setThreads(listThreads());
     refresh();
-    window.addEventListener("edubridge:threads-changed", refresh);
+    window.addEventListener("scholaport:threads-changed", refresh);
     window.addEventListener("storage", refresh);
     return () => {
-      window.removeEventListener("edubridge:threads-changed", refresh);
+      window.removeEventListener("scholaport:threads-changed", refresh);
       window.removeEventListener("storage", refresh);
     };
   }, [open]);
@@ -129,11 +114,7 @@ function ThreadsSheet({ activeThreadId }: { activeThreadId?: string }) {
           <SheetTitle className="font-display">Your chats</SheetTitle>
         </SheetHeader>
         <div className="p-3">
-          <Button
-            onClick={onNew}
-            className="w-full justify-start gap-2"
-            variant="default"
-          >
+          <Button onClick={onNew} className="w-full justify-start gap-2" variant="default">
             <Plus className="h-4 w-4" />
             New chat
           </Button>
@@ -151,7 +132,7 @@ function ThreadsSheet({ activeThreadId }: { activeThreadId?: string }) {
                 key={t.id}
                 className={cn(
                   "group flex items-center gap-1 rounded-lg px-2 transition-colors",
-                  active ? "bg-primary/10" : "hover:bg-muted"
+                  active ? "bg-primary/10" : "hover:bg-muted",
                 )}
               >
                 <button
@@ -168,7 +149,7 @@ function ThreadsSheet({ activeThreadId }: { activeThreadId?: string }) {
                   <span
                     className={cn(
                       "block truncate",
-                      active ? "font-medium text-primary" : "text-foreground"
+                      active ? "font-medium text-primary" : "text-foreground",
                     )}
                   >
                     {t.title || "Untitled chat"}

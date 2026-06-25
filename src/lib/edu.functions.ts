@@ -1,10 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import {
-  createLovableAiGatewayProvider,
-  DEFAULT_CHAT_MODEL,
-} from "./ai-gateway.server";
+import { createLovableAiGatewayProvider, DEFAULT_CHAT_MODEL } from "./ai-gateway.server";
 
 // ---------- Transcript conversion ----------
 
@@ -49,10 +46,8 @@ Analyze the transcript provided.
 5. Write a 2-3 sentence plain-language "summary" the student can read.
 Be conservative — if the scale is ambiguous, say so in the summary.`;
 
-    const userContent: Array<
-      | { type: "text"; text: string }
-      | { type: "image"; image: string }
-    > = [];
+    const userContent: Array<{ type: "text"; text: string } | { type: "image"; image: string }> =
+      [];
 
     if (data.rawText) {
       userContent.push({

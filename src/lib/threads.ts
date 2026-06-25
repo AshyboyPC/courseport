@@ -7,7 +7,7 @@ export interface ThreadRecord {
   messages: UIMessage[];
 }
 
-const KEY = "edubridge.threads.v1";
+const KEY = "scholaport.threads.v1";
 
 const isBrowser = () => typeof window !== "undefined";
 
@@ -26,7 +26,7 @@ function readAll(): ThreadRecord[] {
 function writeAll(threads: ThreadRecord[]) {
   if (!isBrowser()) return;
   window.localStorage.setItem(KEY, JSON.stringify(threads));
-  window.dispatchEvent(new CustomEvent("edubridge:threads-changed"));
+  window.dispatchEvent(new CustomEvent("scholaport:threads-changed"));
 }
 
 export function listThreads(): ThreadRecord[] {
