@@ -12,6 +12,8 @@ The United States onboarding flow now:
 3. Filters destination frameworks by selected jurisdiction.
 4. Filters frameworks by expected graduation year when year bounds exist.
 5. Prevents the Georgia framework from appearing as a fallback for other states.
+6. Prevents the Texas framework from appearing as a fallback for other states.
+7. Allows Texas framework selection for Texas students.
 6. Clears stale framework and program selections when the destination state changes.
 7. Clears incompatible program selections when the framework changes.
 8. Keeps optional programs separate from frameworks.
@@ -25,8 +27,9 @@ The United States onboarding flow now:
 - exactly 51 U.S. planning jurisdictions;
 - DC as `federal_district`;
 - jurisdiction identity separated from framework coverage;
-- framework filtering by state with no Georgia fallback;
+- framework filtering by state with no Georgia or Texas fallback;
 - Georgia requirement attachment and 23-credit total;
+- Texas requirement attachment and 26-credit default endorsement path;
 - program separation and state scoping;
 - field-level provenance for displayed jurisdiction identity fields.
 
@@ -55,10 +58,13 @@ Results:
 The following browser scenarios still need a real browser-authenticated Supabase test run after the updated local package is imported:
 
 - Georgia standard framework;
+- Texas standard framework (Foundation + endorsement, 26-credit path);
+- Texas incomplete-detail state (showing opt-out 22-credit minimum path);
 - California incomplete-detail state;
 - New York incomplete-detail state;
 - a strong local-control state after that state is researched;
-- changing Georgia to another state;
+- changing Georgia to Texas;
+- changing Texas to another state;
 - changing expected graduation year;
 - selecting and removing a program;
 - slow connection;
@@ -71,4 +77,4 @@ The following browser scenarios still need a real browser-authenticated Supabase
 
 ## Current conclusion
 
-The code path now prevents the most serious U.S. onboarding error: silently substituting Georgia for other states. However, full browser E2E and live-data verification have not been completed for this local U.S. correction pass.
+The code path now prevents the most serious U.S. onboarding error: silently substituting Georgia or Texas for other states. However, full browser E2E and live-data verification have not been completed for this local U.S. correction pass.

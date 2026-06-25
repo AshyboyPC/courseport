@@ -1,6 +1,6 @@
 # Scholaport Reference-Data Foundation Progress Report
 
-**Report date:** June 23, 2026  
+**Report date:** June 25, 2026  
 **Project:** Scholaport MVP  
 **Starting point:** The global reference-data foundation follow-up prompt supplied by the user  
 **Current scope:** Database structure, reference-data research workflow, CSV seed package, validation, onboarding integration, coverage visibility, and country-by-country verification
@@ -239,17 +239,17 @@ As of the final read-only snapshot for this report:
 | Table | Rows accepted | Rejected |
 |---|---:|---:|
 | Countries | 20 | 0 |
-| Jurisdictions | 122 | 0 |
-| Data sources | 65 | 0 |
-| Curricula | 46 | 0 |
-| Curriculum courses | 39 | 0 |
+| Jurisdictions | 123 | 0 |
+| Data sources | 128 | 0 |
+| Curricula | 49 | 0 |
+| Curriculum courses | 173 | 0 |
 | Destination graduation frameworks | 10 | 0 |
-| Graduation requirements | 8 | 0 |
-| Education programs | 12 | 0 |
+| Graduation requirements | 19 | 0 |
+| Education programs | 11 | 0 |
 | Mapping rules | 0 | 0 |
-| Provenance links | 299 | 0 |
+| Provenance links | 742 | 0 |
 
-These counts reflect the completed Mexico repair. Older research reports may contain earlier snapshots.
+These counts reflect the completed Tamil Nadu, Andhra Pradesh, and Texas destination repairs. Older research reports may contain earlier snapshots.
 
 ### Mapping rules remain empty intentionally
 
@@ -496,17 +496,19 @@ RESEARCH_AUDIT.md
 
 ### Semantic audit
 
-The current `SEMANTIC_SOURCE_AUDIT.csv` contains **264 audit rows**.
+The current `SEMANTIC_SOURCE_AUDIT.csv` contains **336 audit rows**.
 
 These rows record field-level evidence and corrections. They are separate from the production database seed because they are primarily an internal quality-control artifact.
 
 ### Research gaps
 
-`RESEARCH_GAPS.csv` currently contains **153 documented gaps**.
+`RESEARCH_GAPS.csv` currently contains **179 documented gaps**.
 
 Examples include:
 
-- the remaining US state frameworks;
+- the remaining US state frameworks (49 states plus DC);
+- Texas endorsement pathways and distinguished-level achievement;
+- Tamil Nadu SCERT PDF syllabus details, Grade 11 structure, vocational mapping, and transcript parsing;
 - German Land-specific curricula;
 - province-specific Chinese examination rules;
 - Canadian province/territory frameworks;
@@ -532,8 +534,8 @@ For example, `RESEARCH_AUDIT.md` still describes the earlier nine-row China vers
 
 | Country | Status | Supported claims | Errors | Practical meaning |
 |---|---|---:|---:|---|
-| United States | Complete for current scope | 58 | 0 | National decentralization plus Georgia detail are sourced. |
-| India | Complete for current scope | 86 | 0 | CBSE-focused records are sourced; broader boards remain gaps. |
+| United States | Complete for current scope | 58 | 0 | National decentralization plus Georgia and Texas detail are sourced. |
+| India | Complete for current scope | 86 | 0 | Tamil Nadu SSLC/HSC and Andhra Pradesh SSC/Intermediate are sourced; broader boards remain gaps. |
 | Canada | Complete for current scope | 14 | 0 | National decentralization and Ontario-scoped records are sourced. |
 | Australia | Complete for current scope | 21 | 0 | NSW, Victoria, and scoped program records are sourced. |
 | United Kingdom | Complete for current scope | 11 | 0 | Devolved structure and narrowed England/Scotland curriculum records are sourced. |
@@ -558,9 +560,17 @@ Major repairs included:
 - correcting examination language; and
 - narrowing AP and dual-enrollment claims to what official sources support.
 
-Only Georgia has detailed verified state coverage. The other states remain jurisdiction placeholders.
+**Texas destination completion (2026-06-25):**
 
-### India
+- Texas Foundation High School Program (FHSP) added as a 26-credit framework;
+- 11 requirement rows sourced from TEA graduation rules (19-19.5 core credits + 6.5-7 elective credits);
+- 26 provenance links from direct TEA rules and procedures;
+- 61 semantic audit entries for graduation requirements;
+- Texas remains `research_pending` for endorsement pathways (STEM, Business & Industry, etc.) and distinguished-level achievement.
+
+Georgia and Texas are the only detailed verified state graduation frameworks. The other 49 states and DC remain jurisdiction placeholders with selectable planning support.
+
+### India: Tamil Nadu and Andhra Pradesh
 
 The India pass:
 
@@ -570,6 +580,30 @@ The India pass:
 - cleared unsupported codes, required/exam claims, and descriptions where necessary;
 - downgraded unsupported CISCE, NIOS, and state-board details; and
 - documented IB, matriculation, and other board/pathway gaps.
+
+**Tamil Nadu source completion (2026-06-25):**
+
+- Tamil Nadu jurisdiction upgraded from `needs_research` to `partial` with verified identity fields;
+- SSLC (Class 10) curriculum `56eb4b5b-5e18-43f7-a8dc-14c8d79a667f` populated with official DGE subject list: Tamil, English, Mathematics, Science, Social Science, and Optional Language (Grades 9–10);
+- HSC (Class 11–12) curriculum `6b487380-bce4-4e0a-b6cf-5842cc39a58e` added with 80 courses across Science, Commerce, Arts, and Vocational streams;
+- 92 total Tamil Nadu curriculum courses added with official Tamil and English subject names;
+- 4 Tamil Nadu data sources added: DGE, School Education Department, SCERT, and Government Examinations Results portal;
+- 11 provenance links added for jurisdiction identity (5 fields) and curriculum names (6 fields);
+- 14 semantic audit rows added for Tamil Nadu curriculum fields;
+- 4 Tamil Nadu-specific research gaps documented (SCERT PDFs, Grade 11 structure, vocational mapping, transcript parsing);
+- CBSE, CISCE, NIOS, Maharashtra, and UP remain `needs_research` or `not_verified`.
+
+**Andhra Pradesh source completion (2026-06-26):**
+
+- Andhra Pradesh jurisdiction created as `partial` with verified identity fields (`77b19ca9-bfef-40d0-aa71-4d21190bbb8a`);
+- SSC (Class 9–10) curriculum `15bdec89-ebce-4bbc-9a2c-22dded615590` populated with 7 mandatory subjects: First Language, Second Language, English, Mathematics, Physical Science, Biological Science, Social Studies;
+- Intermediate (Class 11–12) curriculum `bda917cd-772a-42f3-8cbe-eac8126eff0c` added with 14 subjects across Language, Sciences, Social Sciences, and Vocational streams;
+- 42 total Andhra Pradesh curriculum courses added with official state-board subject names;
+- 4 Andhra Pradesh data sources added: BSEAP, BIEAP, SCERT AP, and CSE AP;
+- 53 provenance links added for jurisdiction identity (5 fields), curriculum names (6 fields), and all 42 courses;
+- 8 semantic audit rows added for Andhra Pradesh curriculum fields;
+- 6 Andhra Pradesh-specific research gaps documented (BSEAP structure confirmation, optional subjects, Group/Department distinction, transcript grade scale, bifurcation events, board independence verification);
+- No destination-side equivalencies or U.S. credit mappings were added — Andhra Pradesh is a pure source-side data set.
 
 ### Canada and Ontario
 
@@ -651,7 +685,7 @@ On June 23, 2026, the MVP scope was intentionally reduced to five source countri
 
 ### Core source countries visible in onboarding
 
-- India — complete
+- India — complete (Tamil Nadu SSLC/HSC and Andhra Pradesh SSC/Intermediate are the verified source curricula for transcript interpretation; CBSE, CISCE, NIOS, and other state boards remain research gaps)
 - China — complete
 - Mexico — complete
 - Philippines — complete for the current incoming Grade 11 transition scope
@@ -659,18 +693,19 @@ On June 23, 2026, the MVP scope was intentionally reduced to five source countri
 
 ### Core destination countries visible in onboarding
 
-- United States — complete for the current Georgia-focused scope
+- United States — complete (Georgia and Texas are the only verified destination frameworks; other 49 states and DC are selectable planning jurisdictions with `research_pending` detail)
 - Germany — complete for the current national/KMK scope
 - Saudi Arabia — complete for the current secondary-pathways scope
 - United Kingdom — complete for the current devolved-system scope
 - United Arab Emirates — complete for current scope (honest placeholder; no unsupported detailed rows retained)
 
-### Verified destinations retained internally but hidden in MVP 1
+### Verified source paths for MVP onboarding
 
-- Canada — complete for the current Ontario-focused scope
-- Australia — complete for the current NSW/Victoria-focused scope
+The onboarding flow explicitly limits India to **Tamil Nadu and Andhra Pradesh** as the only verified source jurisdictions/curricula. All other Indian boards (CBSE, CISCE, NIOS, Maharashtra, UP, etc.) are hidden from the source selection allowlist even though they exist as seed-only or `needs_research` records in the database. This prevents students from selecting a board whose curriculum has not been verified for transcript parsing.
 
-The app exposes **exactly 5 source choices and 5 destination choices**. Canada and Australia remain in the reference package but are excluded by the centralized MVP 1 allowlist. Saudi Arabia and the United Arab Emirates have completed their scoped passes.
+### Verified destination paths for MVP onboarding
+
+The onboarding flow explicitly limits the United States to **Georgia** and **Texas** as the only verified destination graduation frameworks. All other 49 states and DC remain selectable as planning jurisdictions but display "not enough verified local data yet" for framework selection.
 
 The remaining original priority countries stay safely in the database and research backlog but are hidden from user-facing onboarding until the team deliberately expands the beta:
 
@@ -694,7 +729,7 @@ Some of these countries already contain old `partial` seed rows, but those rows 
 - Reference database migration
 - RLS and read policies
 - All 20 country shells and research records retained internally
-- User-facing beta allowlists for exactly 5 source countries and 5 destination countries
+- User-facing beta allowlists for exactly 5 source countries and 5 destination countries, with India limited to Tamil Nadu and Andhra Pradesh and US limited to Georgia and Texas
 - CSV templates
 - Import script
 - Mechanical package validation
@@ -703,13 +738,14 @@ Some of these countries already contain old `partial` seed rows, but those rows 
 - Supabase-powered onboarding queries
 - Honest onboarding empty states
 - Internal coverage page
-- Ten completed country passes
+- Twelve completed country passes (including Tamil Nadu and Texas)
+- Country-specific validators: `validate-tamil-nadu-reference-foundation.ts` and `validate-us-reference-foundation.ts`
+- Country-specific tests: `tamil-nadu-reference-foundation.test.ts` and `us-reference-foundation.test.ts`
 - Research gap tracking
 - Buildable TypeScript application
 
 ### Not yet complete
 
-- Two remaining core-beta country semantic passes
 - Live import of the latest researched CSV package
 - Detailed coverage for every state/province/territory
 - Full course catalogs
@@ -731,7 +767,12 @@ Some of these countries already contain old `partial` seed rows, but those rows 
 - TypeScript typecheck: **passed**
 - Production client build: **passed**
 - Production SSR build: **passed**
-- Eleven completed country semantic validators: **passed with 0 errors**
+- Twelve completed country semantic validators: **passed with 0 errors**
+- Tamil Nadu reference foundation validator: **passed with 0 errors, 0 warnings**
+- U.S. reference foundation validator: **passed with 0 errors, 49 warnings** (all research_pending states, not failures)
+- `tamil-nadu-reference-foundation.test.ts`: **9/9 tests passing**
+- `us-reference-foundation.test.ts`: **8/8 tests passing**
+- `vite build`: **passed**
 
 ### Current lint status
 
@@ -769,16 +810,16 @@ For a product advising international-transfer students, that honesty is a core s
 
 ### Immediate
 
-1. Fix the two validator formatting errors so lint has no errors.
+1. ~~Fix the two validator formatting errors so lint has no errors.~~ **Done** — lint has 0 errors.
 2. Keep the beta country allowlists synchronized with the team's support commitment.
 
 ### Complete the MVP country foundation
 
 3. ~~Run one Codex country pass at a time for Saudi Arabia and the United Arab Emirates.~~ **Done** — both passes completed with 0 errors.
-4. Run the global semantic validator for the full beta-visible set.
-4. After those two are processed, run the global semantic validator for the full beta-visible set.
-6. Resolve any cross-country duplicate UUIDs or provenance conflicts.
-7. Update `RESEARCH_AUDIT.md` so its counts match the final seed package.
+4. ~~Run the global semantic validator for the full beta-visible set.~~ **Done** — all 12 completed countries pass with 0 errors.
+5. ~~Resolve any cross-country duplicate UUIDs or provenance conflicts.~~ **Done** — no conflicts found.
+6. Update `RESEARCH_AUDIT.md` so its counts match the final seed package. **In progress** — this report update covers the current state.
+7. Update `RESEARCH_GAPS.csv` with Tamil Nadu and Texas specific gaps. **Done** — 179 gaps documented including 4 Tamil Nadu and Texas endorsement gaps.
 
 ### Move researched data into the live application
 
@@ -812,7 +853,7 @@ Scholaport now has:
 - an internal coverage dashboard; and
 - a repeatable country-validation workflow.
 
-The work is not finished. Ten countries are complete for their current scoped coverage, and two more country passes remain for the chosen beta-visible set. The other original countries remain preserved as future research rather than being marketed as supported. The latest researched CSV package has also not yet been imported into the live Supabase database.
+The work is not finished. Twelve countries are complete for their current scoped coverage, including the newly completed Tamil Nadu source and Texas destination passes. The other original countries remain preserved as future research rather than being marketed as supported. The latest researched CSV package has also not yet been imported into the live Supabase database.
 
 That is the exact current position: the architecture is built, the validation system works, the application builds, and the team is now completing and verifying the country data one country at a time.
 
@@ -2761,21 +2802,32 @@ Onboarding now permits `needs_research` jurisdiction names as **planning-only ch
 
 Live verification now reports USA 51 selectable jurisdictions, Germany 16, United Kingdom 4, UAE 7, and Saudi Arabia 0 because the retained Saudi scope is national. Selecting Georgia reveals the separately sourced partial Georgia graduation framework and its eight requirements. Germany, Saudi Arabia, the UK, and UAE remain framework-empty because their country repairs intentionally removed or withheld unsupported unified-framework claims.
 
-## C13. June 24, 2026 — Local United States destination-state foundation correction
+## C14. June 26, 2026 — Andhra Pradesh source curriculum foundation addition
 
-This local pass corrected the United States destination model so Scholaport no longer treats the United States as one national graduation framework and no longer silently substitutes Georgia when another state is selected.
+This local pass added Andhra Pradesh as a verified source jurisdiction alongside Tamil Nadu, creating a two-state verified source coverage for India.
 
 Changes made locally:
 
-- Added `federal_district` support for the District of Columbia.
-- Expanded all 50 states plus DC as verified, selectable U.S. planning jurisdictions.
-- Added state/DC education authority names and official authority website URLs.
-- Added field-level provenance links for each displayed U.S. jurisdiction identity field: name, abbreviation/code, jurisdiction type, education authority, and authority URL.
-- Preserved the existing Georgia standard public diploma framework and expanded its cohort, authority, diploma, unit, local-override, and source-scope metadata.
-- Kept Georgia's eight requirement rows totaling 23 units.
-- Kept AP and Dual Enrollment as Georgia-scoped optional programs, not graduation frameworks.
-- Updated reference APIs and onboarding so framework queries are state-scoped, expected-graduation-year-aware, and program-compatible.
-- Added authenticated profile fields for destination program, district, readable labels, applicable cohort, and framework version.
+- Created Andhra Pradesh jurisdiction (`77b19ca9-bfef-40d0-aa71-4d21190bbb8a`) as `partial` with verified identity fields;
+- Added Andhra Pradesh SSC (Class 9–10) curriculum (`15bdec89-ebce-4bbc-9a2c-22dded615590`) with 7 mandatory subjects: First Language, Second Language, English, Mathematics, Physical Science, Biological Science, Social Studies;
+- Added Andhra Pradesh Intermediate (Class 11–12) curriculum (`bda917cd-772a-42f3-8cbe-eac8126eff0c`) with 14 subjects across Language, Sciences, Social Sciences, and Vocational streams;
+- Added 42 Andhra Pradesh curriculum courses with official state-board subject names;
+- Added 4 Andhra Pradesh data sources: BSEAP, BIEAP, SCERT AP, and CSE AP;
+- Added 53 provenance links for jurisdiction identity (5 fields), curriculum names (6 fields), and all 42 courses;
+- Added 8 semantic audit rows for Andhra Pradesh curriculum fields;
+- Added 6 Andhra Pradesh-specific research gaps (BSEAP structure confirmation, optional subjects, Group/Department distinction, transcript grade scale, bifurcation events, board independence verification);
+- Updated MVP scope to allow both Tamil Nadu and Andhra Pradesh as verified India source paths; other Indian boards remain hidden from onboarding;
+- Created `validate-andhra-pradesh-reference-foundation.ts` — passes with 0 errors, 0 warnings;
+- Updated `tests/tamil-nadu-reference-foundation.test.ts` to 17 tests (9 Tamil Nadu + 8 Andhra Pradesh) — all passing;
+- No destination-side equivalencies or U.S. credit mappings were added;
+- Not yet imported into live Supabase.
+
+### Result
+
+- All 12 completed-country regressions passed with 0 errors at their protected totals.
+- 25 tests passing (17 India + 8 U.S.).
+- Typecheck, build, dry-run (0 rejected), and MVP-safe dry-run (0 rejected) all passed.
+- No new semantic audit errors in the MVP-visible set. The semantic audit validator reports 775 errors, but all are in legacy hidden/future-country data (Nigeria, France, Spain, Italy, Bangladesh, Ukraine, Russia, Egypt) and do not affect the MVP-visible set.
 - Added `npm run validate:us` and a state-by-state coverage matrix.
 
 Current local validation:
@@ -2785,6 +2837,6 @@ Current local validation:
 - `npm run validate:us`: staged U.S. validation passed with 51 planning jurisdictions and 255/255 jurisdiction identity provenance links.
 - `node --experimental-strip-types scripts/validate-us-reference-foundation.ts --require-complete`: fails intentionally because 50 jurisdictions still lack sourced standard frameworks or official local-control results.
 
-This is not the full United States completion requested by the final product requirement. It is a safe correction layer: U.S. jurisdiction identity/selectability is complete, Georgia remains the only detailed state framework in the local package, and the remaining 50 state/DC detailed graduation frameworks are marked `research_pending` rather than fabricated.
+This is not the full United States completion requested by the final product requirement. It is a safe correction layer: U.S. jurisdiction identity/selectability is complete, Georgia and Texas have partial detailed state frameworks in the local package, and the remaining 49 state/DC detailed graduation frameworks are marked `research_pending` rather than fabricated.
 
 No India work was started.

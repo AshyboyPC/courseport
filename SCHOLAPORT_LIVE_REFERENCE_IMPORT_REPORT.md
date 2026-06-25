@@ -38,7 +38,8 @@ The effects required from all three repository migrations are present. No migrat
 
 - Source allowlist: IND, CHN, MEX, PHL, PAK
 - Destination allowlist: USA, DEU, SAU, GBR, ARE
-- Live supported source curriculum counts: IND 2, CHN 3, MEX 2, PHL 2, PAK 2
+- Live supported source curriculum counts: IND 2 (Tamil Nadu only in live database), CHN 3, MEX 2, PHL 2, PAK 2
+- Local package now has IND 4 (Tamil Nadu SSLC + HSC, Andhra Pradesh SSC + Intermediate)
 - UAE stores seven emirate placeholders and zero curriculum, framework, or program detail.
 - Onboarding exposes only directly sourced jurisdictions: Georgia for the United States, and England and Scotland for the United Kingdom. `needs_research` jurisdiction placeholders remain hidden.
 - Selecting the United States auto-selects Georgia and its sourced 23-unit graduation framework because each is the sole supported option.
@@ -60,6 +61,35 @@ A complete browser-authenticated onboarding run remains blocked because this che
 
 No credential value is recorded in this report.
 
+## Local Andhra Pradesh addition not yet live-imported
+
+After the live import described above, the repository received an additional local Andhra Pradesh source curriculum addition alongside the existing Tamil Nadu data. That local package is newer than the live counts in this report.
+
+Local-only changes now include:
+
+- Andhra Pradesh jurisdiction created as `partial` with verified identity fields;
+- Andhra Pradesh SSC (Class 9-10) curriculum with 7 mandatory subjects;
+- Andhra Pradesh Intermediate (Class 11-12) curriculum with 14 subjects;
+- 42 Andhra Pradesh curriculum courses with official state-board subject names;
+- 4 Andhra Pradesh data sources (BSEAP, BIEAP, SCERT AP, CSE AP);
+- 53 Andhra Pradesh provenance links;
+- 8 Andhra Pradesh semantic audit rows;
+- 6 Andhra Pradesh research gaps documented;
+- MVP scope updated to allow both Tamil Nadu and Andhra Pradesh as verified India source paths;
+- 17/17 tests passing (9 Tamil Nadu + 8 Andhra Pradesh);
+- all 12 completed-country regressions passed with 0 errors.
+
+This local Andhra Pradesh package has **not** been imported into live Supabase in this pass. Therefore the live counts at the top of this report remain historical for the previous MVP-safe import and should not be read as proof that the Andhra Pradesh data is live.
+
+Before any future live import, rerun:
+
+```bash
+node --experimental-strip-types scripts/import-reference-data.ts --dry-run
+node --experimental-strip-types scripts/import-reference-data.ts --dry-run --mvp-safe
+npm run validate:tn
+npm run validate:ap
+```
+
 ## Local U.S. correction not yet live-imported
 
 After the live import described above, the repository received an additional local United States destination-state correction. That local package is newer than the live counts in this report.
@@ -71,7 +101,9 @@ Local-only changes now include:
 - additional U.S. jurisdiction identity data sources;
 - 255 field-level U.S. jurisdiction identity provenance links;
 - expanded Georgia framework metadata;
-- onboarding and profile persistence fixes for state-scoped framework selection.
+- onboarding and profile persistence fixes for state-scoped framework selection;
+- Andhra Pradesh source curriculum (SSC and Intermediate) with 42 courses, 4 data sources, 53 provenance links, and 8 semantic audit rows;
+- MVP scope updated to allow both Tamil Nadu and Andhra Pradesh as verified India source paths.
 
 This local U.S. package has **not** been imported into live Supabase in this pass. Therefore the live counts at the top of this report remain historical for the previous MVP-safe import and should not be read as proof that the local U.S. correction is live.
 

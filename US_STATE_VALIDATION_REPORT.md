@@ -13,12 +13,12 @@ Result: passed staged validation.
 
 ```text
 planning_jurisdictions=51
-detail_coverage={"research_pending":50,"partial":1}
+detail_coverage={"research_pending":49,"partial":2}
 identity_provenance=255/255
-us_frameworks=1
+us_frameworks=2
 us_programs=2
 us_course_catalogs=0
-warnings=50
+warnings=49
 No validation errors.
 ```
 
@@ -37,12 +37,14 @@ Result: failed strict completion validation because 50 jurisdictions have no sta
 - No U.S. country-level graduation framework exists.
 - Georgia's sourced framework remains state-scoped.
 - Georgia has eight requirement rows totaling 23 units.
+- Texas Foundation High School Program (default 26-credit endorsement path) is state-scoped with 11 requirement rows.
+- Texas local-control flags (districts may add requirements; state sets minimum) are verified.
 - Georgia AP and Dual Enrollment records remain programs, not graduation frameworks.
 - Optional U.S. course-catalog tables may be absent until state catalog research is added.
 
 ## What strict completion still requires
 
-Strict completion currently fails for every planning jurisdiction except Georgia. The remaining 50 jurisdictions need direct official evidence for:
+Strict completion currently fails for every planning jurisdiction except Georgia and Texas. The remaining 49 jurisdictions need direct official evidence for:
 
 - standard public high-school diploma or official local-control result;
 - controlling authority;
@@ -65,6 +67,7 @@ See [US_STATE_COVERAGE.csv](/Users/its_shwindy/Documents/courseport/edubridge-ai
 The local package should be read as:
 
 - **Georgia:** partial framework coverage with sourced standard public diploma requirements.
+- **Texas:** partial framework coverage with sourced Foundation High School Program (default 26-credit endorsement path) requirements and local-control flags.
 - **All other states/DC:** identity verified and selectable; detailed graduation-framework research pending.
 
 This means the United States destination-side foundation is improved but not complete.

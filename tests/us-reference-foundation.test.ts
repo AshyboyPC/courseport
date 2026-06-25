@@ -62,6 +62,9 @@ const usPlanningJurisdictions = usJurisdictions.filter(
 const georgia = usPlanningJurisdictions.find((row) => row.code === "GA");
 assert.ok(georgia, "Georgia planning jurisdiction must exist");
 
+const texas = usPlanningJurisdictions.find((row) => row.code === "TX");
+assert.ok(texas, "Texas planning jurisdiction must exist");
+
 test("United States has exactly 51 verified planning jurisdictions", () => {
   assert.equal(usPlanningJurisdictions.length, 51);
   assert.equal(new Set(usPlanningJurisdictions.map((row) => row.code)).size, 51);
@@ -82,21 +85,23 @@ test("District of Columbia is not modeled as a state", () => {
 test("jurisdiction identity is separate from detailed framework coverage", () => {
   assert.equal(
     usPlanningJurisdictions.filter((row) => row.detail_coverage_status === "partial").length,
-    1,
+    2,
   );
   assert.equal(georgia.detail_coverage_status, "partial");
   assert.equal(
     usPlanningJurisdictions.filter((row) => row.detail_coverage_status === "research_pending")
       .length,
-    50,
+    49,
   );
 });
 
-test("frameworks are scoped to the selected state and do not fall back to Georgia", () => {
-  const georgiaFrameworks = frameworks.filter((row) => row.jurisdiction_id === georgia.id);
-  assert.equal(georgiaFrameworks.length, 1);
-  assert.equal(georgiaFrameworks[0].framework_name, "Georgia High School Graduation Requirements");
-  assert.equal(georgiaFrameworks[0].is_standard_framework, "true");
+test("Texas framework is scoped to Texas and does not fall back to Georgia", () => {
+  const texasFrameworks = frameworks.filter((row) => row.jurisdiction_id === texas.id);
+  assert.equal(texasFrameworks.length, 1);
+  assert.equal(texasFrameworks[0].framework_name, "Texas Foundation High School Program");
+  assert.equal(texasFrameworks[0].is_standard_framework, "true");
+  assert.equal(texasFrameworks[0].local_requirements_may_exceed, "true");
+  assert.equal(texasFrameworks[0].counselor_review_required, "true");
 
   const california = usPlanningJurisdictions.find((row) => row.code === "CA");
   assert.ok(california);
@@ -105,6 +110,23 @@ test("frameworks are scoped to the selected state and do not fall back to Georgi
     frameworks.filter((row) => row.country_id === usa.id && !row.jurisdiction_id).length,
     0,
   );
+});
+
+test("Texas requirements remain attached only to Texas's framework", () => {
+  const texasFramework = frameworks.find((row) => row.jurisdiction_id === texas.id);
+  assert.ok(texasFramework);
+  const texasRequirements = requirements.filter(
+    (row) => row.framework_id === texasFramework.id,
+  );
+  assert.equal(texasRequirements.length, 11);
+  assert.equal(
+    texasRequirements.reduce((sum, row) => sum + Number(row.credits_required || 0), 0),
+    26,
+  );
+  assert.ok(texasRequirements.some((row) => row.requirement_kind === "assessment"));
+  assert.ok(texasRequirements.some((row) => row.requirement_kind === "non_course"));
+  assert.ok(texasRequirements.some((row) => row.subject_category === "Endorsement/Advanced Credits"));
+  assert.equal(texasFramework.total_credits_required, "26");
 });
 
 test("Georgia requirements remain attached only to Georgia's framework", () => {

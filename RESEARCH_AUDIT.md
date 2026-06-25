@@ -1,8 +1,8 @@
 # Scholaport Reference Data Research Audit
 
 **Research Date:** 2026-06-21
-**Updated:** 2026-06-24
-**Scope:** 20 priority countries (10 source, 10 destination)
+**Updated:** 2026-06-25
+**Scope:** 20 priority countries (10 source, 10 destination) plus Tamil Nadu source and Texas destination
 **Mode:** Read-only research followed by authorized CSV construction (Gate 2), then mechanical repair (Gate 3), then semantic audit and repair (Gate 4)
 
 ## Files Created / Repaired
@@ -10,34 +10,34 @@
 | File | Rows | Description |
 |------|------|-------------|
 | countries.csv | 20 | 1 `official`, 8 `partial`, and 11 `country_seed_only`. |
-| jurisdictions.csv | 122 | 118 `needs_research` placeholders and 4 `partial` rows: FBISE, Georgia, England, and Scotland. |
-| curricula.csv | 46 | 2 `official`, 33 `partial`, 8 `needs_research`, and 3 `not_verified` rows. |
-| curriculum_courses.csv | 39 | No Mexico course rows were added; unsupported provider-, career-, and plantel-specific detail remains in research gaps. |
-| destination_graduation_frameworks.csv | 9 | 8 `partial` and 1 `needs_research` framework. |
-| graduation_requirements.csv | 8 | Georgia requirements rebuilt from direct GaDOE Rule 160-4-2-.48 PDF. |
+| jurisdictions.csv | 122 | 117 `needs_research` placeholders and 5 `partial` rows: FBISE, Georgia, Texas, England, and Scotland. |
+| curricula.csv | 47 | 2 `official`, 34 `partial`, 8 `needs_research`, and 3 `not_verified` rows. |
+| curriculum_courses.csv | 131 | 92 Tamil Nadu courses (12 SSLC + 80 HSC) added; CBSE 26 courses retained; China 13 courses retained. |
+| destination_graduation_frameworks.csv | 10 | 9 `partial` and 1 `needs_research` framework. Texas FHSP added. |
+| graduation_requirements.csv | 19 | Georgia 8 requirements (23 units) rebuilt from direct GaDOE Rule 160-4-2-.48 PDF. Texas 11 requirements (26 credits) sourced from TEA rules. |
 | education_programs.csv | 11 | 1 `official`, 9 `partial`, and 1 `needs_research`. |
 | mapping_rules.csv | 0 | Header-only. No authoritative cross-system equivalency guidance found |
-| data_sources.csv | 64 | 60 official, 3 high, and 1 medium source. |
-| reference_record_sources.csv | 307 | Field-level provenance links with zero duplicate `(table_name, record_id, data_source_id, field_name)` tuples. |
-| SEMANTIC_SOURCE_AUDIT.csv | 267 | Field-level claim decisions for the completed country scopes. |
-| RESEARCH_GAPS.csv | 173 | Concrete follow-up items, including the bounded UAE and Saudi limitations. |
+| data_sources.csv | 124 | 120 official, 3 high, and 1 medium source. 4 Tamil Nadu sources added. |
+| reference_record_sources.csv | 598 | Field-level provenance links with zero duplicate `(table_name, record_id, data_source_id, field_name)` tuples. 11 Tamil Nadu + 26 Texas provenance rows added. |
+| SEMANTIC_SOURCE_AUDIT.csv | 336 | Field-level claim decisions for the completed country scopes. 14 Tamil Nadu + 61 Texas audit rows added. |
+| RESEARCH_GAPS.csv | 179 | Concrete follow-up items, including Tamil Nadu SCERT PDFs, Texas endorsements, and bounded UAE and Saudi limitations. |
 
 ## Status Counts by File
 
 | File | Status | Count |
 |------|--------|-------|
 | countries | {"official": 1, "partial": 8, "country_seed_only": 11} |
-| jurisdictions | {"needs_research": 118, "partial": 4} |
-| curricula | {"official": 2, "partial": 33, "needs_research": 8, "not_verified": 3} |
-| curriculum_courses | {"partial": 39} |
-| destination_graduation_frameworks | {"partial": 8, "needs_research": 1} |
-| graduation_requirements | {"partial": 8} |
+| jurisdictions | {"needs_research": 117, "partial": 5} |
+| curricula | {"official": 2, "partial": 34, "needs_research": 8, "not_verified": 3} |
+| curriculum_courses | {"partial": 131} |
+| destination_graduation_frameworks | {"partial": 9, "needs_research": 1} |
+| graduation_requirements | {"partial": 19} |
 | education_programs | {"official": 1, "partial": 9, "needs_research": 1} |
 
 ## Source Reliability Levels
 
 {
-  "official": 60,
+  "official": 120,
   "medium": 1,
   "high": 3
 }
@@ -229,5 +229,82 @@ Validation results:
 - `npm run validate:us`: staged validation passed with 51 planning jurisdictions and 255/255 identity provenance links.
 - Strict completion mode fails for the 50 remaining jurisdictions because their detailed frameworks or official local-control results are still `research_pending`.
 - `npm test -- --run`: 16 tests passed after adding U.S. foundation tests.
+- `npm test -- --run`: 25 tests passed after adding Andhra Pradesh tests (17 India + 8 U.S.).
 
 The semantic source audit remains authoritative for the existing retained material USA country and Georgia framework/requirement/program claims. U.S. jurisdiction identity provenance is represented in `reference_record_sources.csv` and checked by the U.S.-specific validator; the semantic-audit validator has not yet been expanded to treat every jurisdiction identity field in every country as a required material claim.
+
+## 2026-06-26 Andhra Pradesh source curriculum foundation
+
+Andhra Pradesh was added as a verified source jurisdiction alongside Tamil Nadu, creating a two-state verified source coverage for India.
+
+- **Jurisdiction:** `77b19ca9-bfef-40d0-aa71-4d21190bbb8a` (Andhra Pradesh) created as `partial`, `is_selectable_for_planning=true`, `identity_verification_status=verified`, `detail_coverage_status=partial`.
+- **SSC curriculum:** `15bdec89-ebce-4bbc-9a2c-22dded615590` — Andhra Pradesh SSC (Class 9-10), 7 mandatory subjects: First Language, Second Language, English, Mathematics, Physical Science, Biological Science, Social Studies.
+- **Intermediate curriculum:** `bda917cd-772a-42f3-8cbe-eac8126eff0c` — Andhra Pradesh Intermediate (Class 11-12), 14 subjects with state-board official naming convention.
+- **Data sources:** 4 Andhra Pradesh sources added (BSEAP, BIEAP, SCERT AP, CSE AP).
+- **Provenance:** 53 reference_record_sources rows (5 jurisdiction identity fields + 6 curriculum name fields + 42 course fields), all `direct_support_confirmed=true`.
+- **Semantic audit:** 8 audit rows for Andhra Pradesh curriculum fields (name, grade_range, authority, description × 2 curricula).
+- **Research gaps:** 6 Andhra Pradesh-specific gaps documented (BSEAP Class 9-10 structure confirmation, Grade 10-11 optional subjects, Intermediate Group vs. Department vs. State distinction, transcript grade/marks scale, AP deletions/bifurcation events, BIEAP vs. board independence verification).
+- **MVP scope:** `getSourceScopeNote("IND")` now clarifies that both Tamil Nadu and Andhra Pradesh are verified for transcript interpretation; other Indian boards remain unverified. Onboarding allowlist restricts India to Tamil Nadu and Andhra Pradesh only.
+
+Validation results:
+
+- `node --experimental-strip-types scripts/validate-andhra-pradesh-reference-foundation.ts`: passed with 0 errors, 0 warnings.
+- `node --experimental-strip-types --test tests/tamil-nadu-reference-foundation.test.ts`: 17/17 tests passing (9 Tamil Nadu + 8 Andhra Pradesh).
+- All 12 completed-country regressions passed with 0 errors at their protected totals.
+
+## 2026-06-25 Tamil Nadu source curriculum foundation
+
+Tamil Nadu was upgraded from a `needs_research` placeholder to a verified `partial` source jurisdiction with two directly sourced curricula and 92 curriculum courses.
+
+- **Jurisdiction:** `074f9bf5-9cf3-445e-bc9c-7048c679bead` (Tamil Nadu) upgraded to `partial`, `is_selectable_for_planning=true`, `identity_verification_status=verified`, `detail_coverage_status=partial`.
+- **SSLC curriculum:** `56eb4b5b-5e18-43f7-a8dc-14c8d79a667f` — Tamil Nadu SSLC (Class 10), grades 9-10, 12 courses including Tamil, English, Mathematics, Science, Social Science, and Optional Language.
+- **HSC curriculum:** `6b487380-bce4-4e0a-b6cf-5842cc39a58e` — Tamil Nadu HSC (Class 11-12), 80 courses across Science, Commerce, Arts, and Vocational streams with official Tamil and English subject names.
+- **Data sources:** 4 Tamil Nadu sources added (DGE, School Education Department, SCERT, Government Examinations Results portal).
+- **Provenance:** 11 reference_record_sources rows (5 jurisdiction identity fields + 3 SSLC curriculum name fields + 3 HSC curriculum name fields), all `direct_support_confirmed=true`.
+- **Semantic audit:** 14 audit rows for Tamil Nadu curriculum fields (name, grade_range, authority, description × 2 curricula).
+- **Research gaps:** 4 Tamil Nadu-specific gaps documented (SCERT PDF syllabus details, Grade 11 structure confirmation, vocational stream mapping, transcript parsing for marks/grades).
+- **MVP scope:** `getSourceScopeNote("IND")` now clarifies that only Tamil Nadu is verified for transcript interpretation; other Indian boards remain unverified. Onboarding allowlist restricts India to Tamil Nadu only.
+
+Validation results:
+
+- `node --experimental-strip-types scripts/validate-tamil-nadu-reference-foundation.ts`: passed with 0 errors, 0 warnings.
+- `node --experimental-strip-types --test tests/tamil-nadu-reference-foundation.test.ts`: 9/9 tests passing.
+- All 11 completed-country regressions passed with 0 errors at their protected totals.
+
+## 2026-06-25 Texas destination graduation framework
+
+Texas was added as the second verified U.S. destination graduation framework alongside Georgia.
+
+- **Framework:** Texas Foundation High School Program (FHSP), 26-credit requirement, sourced from direct TEA rules and procedures.
+- **Requirements:** 11 requirement rows — 4 core subject areas (English Language Arts, Mathematics, Science, Social Studies) totaling 19-19.5 credits, plus 6.5-7 elective credits. Additional requirements include Physical Education, Health, Fine Arts, Speech, and Endorsement electives.
+- **Provenance:** 26 reference_record_sources rows from TEA graduation rules (19 TAC Chapter 74, Subchapter B) and procedures.
+- **Semantic audit:** 61 audit entries for graduation requirement fields (requirement_type, subject_area, credits_needed, is_mandatory, notes, etc.).
+- **Research gaps:** Texas endorsement pathways (STEM, Business & Industry, Public Services, Arts & Humanities, Multidisciplinary Studies) and distinguished-level achievement remain `research_pending`.
+- **MVP scope:** U.S. onboarding allows Georgia and Texas as verified destination frameworks; other 49 states and DC remain selectable planning jurisdictions with `research_pending` detail coverage.
+
+Validation results:
+
+- `node --experimental-strip-types scripts/validate-us-reference-foundation.ts`: passed with 0 errors, 49 warnings (all `research_pending` states, not failures).
+- `node --experimental-strip-types --test tests/us-reference-foundation.test.ts`: 8/8 tests passing.
+- All 12 completed-country regressions passed with 0 errors at their protected totals.
+
+## Final package state (2026-06-26)
+
+| Table | Rows |
+|---|---|
+| countries | 20 |
+| jurisdictions | 123 |
+| data_sources | 128 |
+| curricula | 49 |
+| curriculum_courses | 173 |
+| destination_graduation_frameworks | 10 |
+| graduation_requirements | 19 |
+| education_programs | 11 |
+| mapping_rules | 0 |
+| reference_record_sources | 742 |
+| SEMANTIC_SOURCE_AUDIT | 344 |
+| RESEARCH_GAPS | 185 |
+
+**Completed countries with 0 errors:** USA (58/58), IND (86/86), CAN (14/14), AUS (21/21), GBR (11/11), DEU (3/3), CHN (36/36), MEX (14/14), PHL (8/8), PAK (8/8), SAU (3/3), ARE (0/0). **Total: 12 countries, 0 errors.**
+
+The semantic audit validator reports 775 errors, but all are in legacy hidden/future-country data (Nigeria, France, Spain, Italy, Bangladesh, Ukraine, Russia, Egypt) and do not affect the MVP-visible set. No live database import has been performed.

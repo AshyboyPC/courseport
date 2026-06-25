@@ -1,5 +1,7 @@
 # Kimi Work prompt — repair and verify India only
 
+> **Status update (2026-06-25):** This prompt was originally executed for the CBSE-focused India pass. Tamil Nadu was subsequently completed in a dedicated 2026-06-25 pass with direct DGE/SCERT/School Education Department sources. See `RESEARCH_AUDIT.md` for the Tamil Nadu completion record.
+
 Work in:
 
 ```text
@@ -222,12 +224,14 @@ Do not infer NIOS course offerings from memory. Do not create NIOS course rows u
 
 ### G. Maharashtra, Tamil Nadu, and Uttar Pradesh placeholders
 
-These are not part of the detailed research target in this run.
+> **Update (2026-06-25):** Tamil Nadu has been completed as a dedicated source jurisdiction with 92 curriculum courses. Maharashtra and Uttar Pradesh remain placeholders.
 
-- Keep jurisdiction and curriculum records as `needs_research` or `not_verified` unless direct current authority evidence is inspected.
+These are not part of the detailed research target in this run (except for Tamil Nadu, which was completed in a subsequent 2026-06-25 pass).
+
+- Keep Maharashtra and Uttar Pradesh jurisdiction and curriculum records as `needs_research` or `not_verified` unless direct current authority evidence is inspected.
 - Remove unsupported detailed descriptions, grade claims, authority claims, or URLs from placeholders where necessary.
 - Do not mark them `partial`, `verified`, or `official` merely because the board homepage exists.
-- Do not create course rows.
+- Do not create Maharashtra or Uttar Pradesh course rows.
 
 ### H. CBSE Skill Education
 

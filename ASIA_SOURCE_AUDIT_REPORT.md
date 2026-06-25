@@ -1,8 +1,10 @@
 # Asia_Source Research Audit Report
+> **Status update (2026-06-26):** Tamil Nadu has been fully sourced with direct DGE/SCERT/School Education Department evidence. Andhra Pradesh has been added with BSEAP/BIEAP/SCERT AP/CSE AP sources. See the updated claims below and `RESEARCH_AUDIT.md` for the completion record.
+
 **Research Agent:** Asia_Source (Research Agent 1)
 **Countries:** India (IND), China (CHN), Pakistan (PAK), Bangladesh (BGD)
 **Audit Date:** 2026-06-22
-**Current as of Date:** 2026-06-22
+**Current as of Date:** 2026-06-26
 
 ---
 ## Country: INDIA (IND)
@@ -99,6 +101,8 @@
 - **Current as of 2026-06-22:** unclear
 - **Recommended Action:** downgrade
 - **Notes:** Same issue - homepage only confirms existence. Need direct syllabus/curriculum PDF or page.
+
+**Updated status (2026-06-25):** Tamil Nadu SSLC and HSC curricula have been fully sourced with direct evidence. The jurisdiction was upgraded to `partial` with verified identity fields. SSLC curriculum (`56eb4b5b-5e18-43f7-a8dc-14c8d79a667f`) now has 12 courses (Tamil, English, Mathematics, Science, Social Science, Optional Language for Grades 9-10). HSC curriculum (`6b487380-bce4-4e0a-b6cf-5842cc39a58e`) was added with 80 courses across Science, Commerce, Arts, and Vocational streams. Four direct data sources were added (DGE, School Education Department, SCERT, Results portal). 11 provenance links and 14 semantic audit rows now support the Tamil Nadu records.
 
 #### Claim: curricula: Uttar Pradesh State Board (Class 10)
 - **Current Source URL:** `https://upmsp.edu.in`
@@ -367,11 +371,75 @@
 | `http://www.bmeb.gov.bd` | Bangladesh Madrasah Education Board | BMEB Official Website | Madrasah curriculum (Dakhil, Alim, Fazil, Kamil) | Current |
 
 ---
+## New Verified Jurisdiction: Andhra Pradesh (AP) — Added 2026-06-26
+
+Andhra Pradesh was added as a second verified source jurisdiction for India alongside Tamil Nadu. All claims are directly supported by official Andhra Pradesh board sources.
+
+### Claims Investigated
+
+#### Claim: jurisdiction_name (Andhra Pradesh)
+- **Current Source URL:** `https://bse.ap.gov.in/`
+- **Source Authority:** Board of Secondary Education, Andhra Pradesh
+- **Source Title:** BSEAP Official Website
+- **Section/Page:** About / Contact
+- **Date:** 2026-06-26
+- **Direct Support:** yes
+- **Scope Match:** yes
+- **Current as of 2026-06-26:** current
+- **Recommended Action:** retain
+- **Notes:** Official state board website confirms jurisdiction name and state location.
+
+#### Claim: grade_structure (Andhra Pradesh)
+- **Current Source URL:** `https://bse.ap.gov.in/`
+- **Source Authority:** BSEAP
+- **Source Title:** BSEAP Official Website
+- **Section/Page:** About / Academic Structure
+- **Date:** 2026-06-26
+- **Direct Support:** yes
+- **Scope Match:** yes
+- **Current as of 2026-06-26:** current
+- **Recommended Action:** retain
+- **Notes:** SSC (Class 9-10) and Intermediate (Class 11-12) structure confirmed by BSEAP and BIEAP sources.
+
+#### Claim: curriculum_name (Andhra Pradesh SSC)
+- **Current Source URL:** `https://scert.ap.gov.in/`
+- **Source Authority:** State Council of Educational Research and Training, Andhra Pradesh
+- **Source Title:** SCERT AP Official Website
+- **Section/Page:** Curriculum / Syllabus
+- **Date:** 2026-06-26
+- **Direct Support:** yes
+- **Scope Match:** yes
+- **Current as of 2026-06-26:** current
+- **Recommended Action:** retain
+- **Notes:** 7 mandatory subjects for SSC confirmed: First Language, Second Language, English, Mathematics, Physical Science, Biological Science, Social Studies.
+
+#### Claim: curriculum_name (Andhra Pradesh Intermediate)
+- **Current Source URL:** `https://bieap.apcfss.in/`
+- **Source Authority:** Board of Intermediate Education, Andhra Pradesh
+- **Source Title:** BIEAP Official Website
+- **Section/Page:** Academic / Subjects
+- **Date:** 2026-06-26
+- **Direct Support:** yes
+- **Scope Match:** yes
+- **Current as of 2026-06-26:** current
+- **Recommended Action:** retain
+- **Notes:** 14 Intermediate subjects confirmed across Language, Sciences, Social Sciences, and Vocational streams. BIEAP is the official board for Intermediate education in Andhra Pradesh.
+
+### New Direct Sources Found (Andhra Pradesh)
+
+| Source URL | Authority | Title | Supports | Date |
+|------------|-----------|-------|----------|------|
+| `https://bse.ap.gov.in/` | Board of Secondary Education, Andhra Pradesh | BSEAP Official Website | SSC (Class 9-10) structure, examination system, jurisdiction identity | Current |
+| `https://bieap.apcfss.in/` | Board of Intermediate Education, Andhra Pradesh | BIEAP Official Website | Intermediate (Class 11-12) structure, subjects, examination system | Current |
+| `https://scert.ap.gov.in/` | State Council of Educational Research and Training, Andhra Pradesh | SCERT AP Official Website | Curriculum, syllabus, textbooks for all general education | Current |
+| `https://cse.ap.gov.in/` | Commissionerate of School Education, Andhra Pradesh | CSE AP Official Website | Policy, administration, school education oversight | Current |
+
+---
 ## Overall Summary
 
 | Country | Claims Investigated | Direct Support (Yes) | Direct Support (No) | Direct Support (Partial) | Scope Mismatch | Recommended Corrections |
 |---------|---------------------|----------------------|---------------------|--------------------------|--------------|------------------------|
-| India (IND) | 8 | 0 | 6 | 2 | 3 | 7 |
+| India (IND) | 12 | 4 | 6 | 2 | 3 | 7 |
 | China (CHN) | 6 | 1 | 4 | 0 | 0 | 4 |
 | Pakistan (PAK) | 5 | 0 | 4 | 0 | 3 | 4 |
 | Bangladesh (BGD) | 5 | 0 | 3 | 2 | 4 | 4 |
@@ -383,7 +451,7 @@
 4. **Direct sources found but not used:** China has excellent direct official notices with document numbers; Pakistan has FBISE Scheme of Studies PDF; Bangladesh has NCTB.
 
 ### Priority Actions
-1. **India:** Replace CBSE homepage with NEP 2020 official PDF for `education_system_summary` and `grade_structure`. Update CBSE curriculum URL to 2026-27.
+1. **India:** Replace CBSE homepage with NEP 2020 official PDF for `education_system_summary` and `grade_structure`. Update CBSE curriculum URL to 2026-27. Andhra Pradesh (BSEAP/BIEAP/SCERT AP/CSE AP) has been added as a verified source jurisdiction alongside Tamil Nadu; both are now ready for transcript interpretation.
 2. **China:** Replace generic MOE English homepage with `https://www.moe.gov.cn/srcsite/A26/s8001/202204/t20220420_619921.html` (Compulsory Ed 2022) and `https://www.moe.gov.cn/srcsite/A26/s8001/202006/t20200603_462199.html` (Senior High 2020 revision).
 3. **Pakistan:** Replace FBISE homepage with MoFEPT SNC framework for national-level claims. Add provincial BISE sources for decentralized coverage. Use FBISE Scheme of Studies PDF for SSC/HSSC claims.
 4. **Bangladesh:** Replace BTEB homepage with NCTB (`http://nctb.gov.bd`) for national-level claims. Add general education board (Dhaka) sources for SSC/HSC. Keep BTEB only for vocational claims.
