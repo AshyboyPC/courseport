@@ -1,12 +1,18 @@
 import { z } from "zod";
+import { normalizeSubjectCategory } from "./subject-taxonomy.ts";
 import { SUBJECT_CATEGORIES } from "./types.ts";
+
+const subjectCategorySchema = z.preprocess(
+  (value) => normalizeSubjectCategory(typeof value === "string" ? value : null),
+  z.enum(SUBJECT_CATEGORIES),
+);
 
 export const structuredCourseMappingOutputSchema = z.object({
   original_course_name: z.string(),
   translated_course_name: z.string().nullable(),
   normalized_course_name: z.string(),
-  source_subject_category: z.enum(SUBJECT_CATEGORIES),
-  mapped_subject_category: z.enum(SUBJECT_CATEGORIES),
+  source_subject_category: subjectCategorySchema,
+  mapped_subject_category: subjectCategorySchema,
   probable_destination_equivalent: z.string(),
   requirement_bucket: z.string().nullable(),
   possible_credit_value: z.number().nullable(),

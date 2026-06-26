@@ -1,9 +1,30 @@
 # Scholaport Reference-Data Foundation Progress Report
 
-**Report date:** June 25, 2026  
+**Report date:** June 26, 2026  
 **Project:** Scholaport MVP  
 **Starting point:** The global reference-data foundation follow-up prompt supplied by the user  
 **Current scope:** Database structure, reference-data research workflow, CSV seed package, validation, onboarding integration, coverage visibility, and country-by-country verification
+
+## June 26, 2026 update: Transcript OCR/converter pipeline hardening
+
+Scholaport's transcript pipeline now separates the upload, storage, Google Document AI OCR, translation, AI extraction, review, and confirmation stages with safe diagnostics:
+
+- uploaded files remain attached even when processing fails;
+- Google Document AI receives the real uploaded bytes with preserved or inferred MIME type;
+- safe stage/code errors are stored on the transcript row instead of showing only a generic OCR failure;
+- raw OCR is saved before AI extraction, so OCR success is not lost if extraction fails;
+- OpenAI transcript extraction runs after OCR when `OPENAI_API_KEY` is configured;
+- Gemini transcript extraction is available when `GEMINI_API_KEY` is configured;
+- mock AI extraction is disabled in the production `/api/v1/transcripts` route;
+- AI course candidates must be backed by OCR evidence before they can be saved as editable candidates;
+- document-level source detection remains reviewable and does not override onboarding automatically; and
+- manual entry remains available when OCR, translation, or AI extraction cannot produce safe course rows.
+
+New follow-up migration:
+
+- `supabase/migrations/202606260001_transcript_ai_extraction_pipeline.sql`
+
+This update still does not perform credit mapping, gap analysis, roadmap generation, counselor packets, or official transcript evaluation inside the transcript converter.
 
 ## June 25, 2026 update: Transcript OCR + translation review layer
 

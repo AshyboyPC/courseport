@@ -1,4 +1,5 @@
 import type { NormalizedOcrResult, OcrFileInput, OcrProvider } from "../types.ts";
+import { TranscriptProcessingError } from "../transcript-processing-errors.ts";
 import { average, bytesToBase64, normalizeWhitespace } from "./provider-utils.server.ts";
 
 type EnvLike = Record<string, string | undefined>;
@@ -50,6 +51,36 @@ type GoogleDocument = {
 type GoogleProcessResponse = {
   document?: GoogleDocument;
 };
+
+function classifyGoogleProviderError(input: {
+  status: number;
+  providerStatus?: string;
+  providerMessage?: string;
+}) {
+  const text = `${input.providerStatus ?? ""} ${input.providerMessage ?? ""}`.toLowerCase();
+  if (/billing|billable|payment|credit|account disabled/.test(text)) {
+    return "provider_billing_unavailable";
+  }
+  if (
+    /quota|rate limit|resource_exhausted/.test(text) ||
+    input.providerStatus === "RESOURCE_EXHAUSTED"
+  ) {
+    return "provider_quota_unavailable";
+  }
+  if (/credential|unauthenticated|invalid_grant/.test(text) || input.status === 401) {
+    return "provider_credentials_invalid";
+  }
+  if (/permission|forbidden|denied|iam/.test(text) || input.status === 403) {
+    return "provider_permission_denied";
+  }
+  if (/processor|not found|location|project/.test(text) || input.status === 404) {
+    return "provider_resource_not_found";
+  }
+  if (/api.*disabled|service.*disabled/.test(text)) {
+    return "provider_api_disabled";
+  }
+  return "provider_api_error";
+}
 
 type GoogleServiceAccount = {
   client_email?: string;
@@ -125,7 +156,11 @@ async function readGoogleServiceAccount(env: EnvLike): Promise<GoogleServiceAcco
     const fs = await import("node:fs/promises");
     return JSON.parse(await fs.readFile(credentialsPath, "utf8")) as GoogleServiceAccount;
   } catch {
-    throw new Error("Unable to read GOOGLE_APPLICATION_CREDENTIALS for Document AI.");
+    throw new TranscriptProcessingError(
+      "config_validation",
+      "provider_credentials_unreadable",
+      "Unable to read GOOGLE_APPLICATION_CREDENTIALS for Document AI.",
+    );
   }
 }
 
@@ -135,7 +170,9 @@ async function getGoogleAccessToken(env: EnvLike) {
 
   const serviceAccount = await readGoogleServiceAccount(env);
   if (!serviceAccount) {
-    throw new Error(
+    throw new TranscriptProcessingError(
+      "config_validation",
+      "provider_not_configured",
       "Google Document AI requires GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_SERVICE_ACCOUNT_JSON, or GOOGLE_DOCUMENT_AI_ACCESS_TOKEN.",
     );
   }
@@ -160,11 +197,23 @@ async function getGoogleAccessToken(env: EnvLike) {
       assertion,
     }),
   });
-  if (!response.ok)
-    throw new Error(`Google OAuth token request failed with status ${response.status}.`);
+  if (!response.ok) {
+    throw new TranscriptProcessingError(
+      "config_validation",
+      response.status === 403 || response.status === 402
+        ? "provider_billing_unavailable"
+        : "provider_credentials_invalid",
+      `Google OAuth token request failed with status ${response.status}.`,
+    );
+  }
   const body = (await response.json()) as { access_token?: string };
-  if (!body.access_token)
-    throw new Error("Google OAuth token response did not include an access token.");
+  if (!body.access_token) {
+    throw new TranscriptProcessingError(
+      "config_validation",
+      "provider_credentials_invalid",
+      "Google OAuth token response did not include an access token.",
+    );
+  }
   return body.access_token;
 }
 
@@ -249,26 +298,63 @@ export function createGoogleDocumentAiProvider(env: EnvLike = process.env): OcrP
       const location = env.GOOGLE_DOCUMENT_AI_LOCATION?.trim();
       const processorId = env.GOOGLE_DOCUMENT_AI_PROCESSOR_ID?.trim();
       if (!projectId || !location || !processorId) {
-        throw new Error("Google Document AI project, location, and processor ID are required.");
+        throw new TranscriptProcessingError(
+          "config_validation",
+          "provider_not_configured",
+          "Google Document AI project, location, and processor ID are required.",
+        );
       }
       const token = await getGoogleAccessToken(env);
       const name = `projects/${projectId}/locations/${location}/processors/${processorId}`;
-      const response = await fetch(`https://documentai.googleapis.com/v1/${name}:process`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          rawDocument: {
-            content: bytesToBase64(input.bytes),
-            mimeType: input.mimeType || "application/pdf",
+      let response: Response;
+      try {
+        response = await fetch(`https://documentai.googleapis.com/v1/${name}:process`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "content-type": "application/json",
           },
-        }),
-      });
-      if (!response.ok)
-        throw new Error(`Google Document AI failed with status ${response.status}.`);
-      return normalizeGoogleResponse((await response.json()) as GoogleProcessResponse);
+          body: JSON.stringify({
+            rawDocument: {
+              content: bytesToBase64(input.bytes),
+              mimeType: input.mimeType || "application/pdf",
+            },
+          }),
+        });
+      } catch {
+        throw new TranscriptProcessingError(
+          "google_request",
+          "google_document_ai_network_error",
+          "Google Document AI request could not be sent.",
+        );
+      }
+      if (!response.ok) {
+        let code = "provider_api_error";
+        try {
+          const body = (await response.json()) as { error?: { status?: string; message?: string } };
+          code = classifyGoogleProviderError({
+            status: response.status,
+            providerStatus: body.error?.status,
+            providerMessage: body.error?.message,
+          });
+        } catch {
+          // Keep the generic code; do not expose raw provider payloads.
+        }
+        throw new TranscriptProcessingError(
+          "google_response",
+          code,
+          `Google Document AI failed with status ${response.status}.`,
+        );
+      }
+      const normalized = normalizeGoogleResponse((await response.json()) as GoogleProcessResponse);
+      if (!normalized.rawText.trim()) {
+        throw new TranscriptProcessingError(
+          "ocr_empty_response",
+          "google_document_ai_empty_text",
+          "Google Document AI returned no readable text.",
+        );
+      }
+      return normalized;
     },
   };
 }

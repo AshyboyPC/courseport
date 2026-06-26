@@ -1,4 +1,5 @@
 import type { SubjectCategory } from "@/lib/mapping/types";
+import { SUBJECT_CATEGORIES } from "@/lib/mapping/types";
 
 const aliasMap: Array<{ category: SubjectCategory; aliases: string[] }> = [
   {
@@ -149,12 +150,57 @@ export function normalizeCourseName(value: string | null | undefined) {
     .trim();
 }
 
+const categoryAliases = new Map<string, SubjectCategory>(
+  SUBJECT_CATEGORIES.flatMap((category) => [
+    [category, category],
+    [category.replaceAll("_", " "), category],
+  ]),
+);
+
+export function normalizeSubjectCategory(value: string | null | undefined): SubjectCategory {
+  const normalized = normalizeCourseName(value).replace(/&/g, "and");
+  const compact = normalized.replace(/\s+/g, "_");
+  const direct = categoryAliases.get(normalized) ?? categoryAliases.get(compact);
+  if (direct) return direct;
+  if (/\bmath|mathematics|algebra|geometry|calculus\b/.test(normalized)) return "mathematics";
+  if (/\bscience|biology|chemistry|physics|botany|zoology\b/.test(normalized)) return "science";
+  if (/\bsocial|history|geography|civics|government|economics\b/.test(normalized)) {
+    return "social_studies";
+  }
+  if (/\benglish|language arts|literature|ela\b/.test(normalized)) {
+    return "english_language_arts";
+  }
+  if (/\bworld language|foreign language|lote|tamil|hindi|spanish|french|arabic|urdu|chinese\b/.test(normalized)) {
+    return "world_language";
+  }
+  if (/\bcomputer|informatics|ict|coding|programming\b/.test(normalized)) {
+    return "computer_science";
+  }
+  if (/\bphysical education|p e|pe|sports|yoga\b/.test(normalized)) {
+    return "physical_education";
+  }
+  if (/\bhealth|wellness\b/.test(normalized)) return "health";
+  if (/\bart|music|dance|fine arts|visual arts|performing arts\b/.test(normalized)) return "arts";
+  if (/\bcareer|technical|cte|ctae|vocational|business|accounting|commerce\b/.test(normalized)) {
+    return "career_technical";
+  }
+  if (/\bfinance|financial literacy|personal finance\b/.test(normalized)) {
+    return "financial_literacy";
+  }
+  if (/\belective\b/.test(normalized)) return "elective";
+  return "unclear";
+}
+
 export function classifySubjectDeterministically(input: {
   original?: string | null;
   translated?: string | null;
   providedCategory?: string | null;
 }): { category: SubjectCategory; matchedAlias?: string; confidence: "high" | "medium" | "low" } {
   const provided = normalizeCourseName(input.providedCategory);
+  const normalizedProvided = normalizeSubjectCategory(input.providedCategory);
+  if (input.providedCategory && normalizedProvided !== "unclear") {
+    return { category: normalizedProvided, matchedAlias: input.providedCategory, confidence: "high" };
+  }
   const haystack = normalizeCourseName(
     `${input.translated ?? ""} ${input.original ?? ""} ${input.providedCategory ?? ""}`,
   );

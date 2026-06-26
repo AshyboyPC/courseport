@@ -6,6 +6,7 @@ import {
 import {
   classifySubjectDeterministically,
   normalizeCourseName,
+  normalizeSubjectCategory,
 } from "@/lib/mapping/subject-taxonomy";
 import type {
   CourseMappingCandidate,
@@ -45,7 +46,8 @@ function findVerifiedRule(context: MappingContext, category: SubjectCategory) {
   return context.mappingRules.find(
     (rule) =>
       ["partial", "verified", "official"].includes(String(rule.coverage_status)) &&
-      (rule.source_subject_category === category || rule.target_subject_category === category),
+      (normalizeSubjectCategory(String(rule.source_subject_category ?? "")) === category ||
+        normalizeSubjectCategory(String(rule.target_subject_category ?? "")) === category),
   );
 }
 
@@ -141,9 +143,9 @@ export function mapCourseDeterministically(
       course.course_name_translated || course.course_name_original,
     ),
     source_subject_category: category,
-    mapped_subject_category: String(
-      verifiedRule?.target_subject_category ?? category,
-    ) as SubjectCategory,
+    mapped_subject_category: normalizeSubjectCategory(
+      String(verifiedRule?.target_subject_category ?? category),
+    ),
     probable_destination_equivalent: String(probableEquivalent),
     requirement_bucket: requirement ? String(requirement.subject_category ?? category) : null,
     possible_credit_value: numberOrNull(requirement?.credits_required) ?? course.credits ?? null,

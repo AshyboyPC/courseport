@@ -4,6 +4,10 @@ import { generateGapAnalysisForTranscript } from "@/lib/gaps/gap-service.server"
 import { generateCreditMappingsForTranscript } from "@/lib/mapping/mapping-service.server";
 import { processTranscriptOcrAndTranslation } from "@/lib/ocr/ocr-service.server";
 import {
+  transcriptApiError,
+  type TranscriptProcessingStage,
+} from "@/lib/ocr/transcript-processing-errors";
+import {
   addManualRoadmapItem,
   generateAcademicRoadmap,
   updateRoadmapItem,
@@ -56,10 +60,58 @@ function json(data: unknown, init?: ResponseInit) {
   return Response.json(data, init);
 }
 
-function publicError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Transcript operation failed.";
-  const status = /authenticated|required/i.test(message) ? 401 : 400;
-  return json({ success: false, error: { message } }, { status });
+function stageFromMessage(message: string): TranscriptProcessingStage {
+  if (/authenticated|signed in|token|authorization/i.test(message)) return "auth";
+  if (/not found|access|user/i.test(message)) return "ownership";
+  if (/json|payload|invalid/i.test(message)) return "backend_request_received";
+  return "backend_request_received";
+}
+
+function publicError(error: unknown, transcriptId?: string | null) {
+  const safe =
+    error instanceof Error
+      ? transcriptApiError({
+          message: error.message || "Transcript operation failed.",
+          stage: stageFromMessage(error.message),
+          code: /authenticated|signed in|token|authorization/i.test(error.message)
+            ? "auth_failed"
+            : "transcript_api_error",
+          status: "failed",
+          retryable: !/access denied|not found/i.test(error.message),
+          manualEntryAvailable: Boolean(transcriptId),
+          transcriptId,
+        })
+      : transcriptApiError({
+          message: "Transcript operation failed.",
+          stage: "backend_request_received",
+          code: "transcript_api_error",
+          status: "failed",
+          retryable: true,
+          manualEntryAvailable: Boolean(transcriptId),
+          transcriptId,
+        });
+  const status = safe.stage === "auth" ? 401 : safe.stage === "ownership" ? 403 : 400;
+  return json({ success: false, error: safe }, { status });
+}
+
+function processingResultError(result: unknown, transcriptId: string) {
+  const data = result as {
+    status?: string;
+    error?: string;
+    errorStage?: string;
+    errorCode?: string;
+    manualEntryAvailable?: boolean;
+  };
+  if (data.status !== "manual_entry") return null;
+  return transcriptApiError({
+    message: data.error ?? "Manual entry is required.",
+    stage: (data.errorStage as TranscriptProcessingStage | undefined) ?? "backend_request_received",
+    code: data.errorCode ?? "manual_entry_required",
+    status: "manual_entry_required",
+    retryable: true,
+    manualEntryAvailable: data.manualEntryAvailable ?? true,
+    transcriptId,
+  });
 }
 
 async function getOwnedTranscript(
@@ -139,15 +191,16 @@ async function buildReviewData(
       ...transcript,
       ocr_raw_json: undefined,
       ocr_raw: undefined,
+      ai_extraction_raw_json: undefined,
       detected_source_country_label: transcript.detected_source_country_id
         ? labels.countries.get(transcript.detected_source_country_id)
-        : null,
+        : transcript.detected_source_country,
       detected_source_jurisdiction_label: transcript.detected_source_jurisdiction_id
         ? labels.jurisdictions.get(transcript.detected_source_jurisdiction_id)
-        : null,
+        : transcript.detected_source_jurisdiction,
       detected_source_curriculum_label: transcript.detected_source_curriculum_id
         ? labels.curricula.get(transcript.detected_source_curriculum_id)
-        : null,
+        : transcript.detected_source_curriculum,
       selected_source_country_label: transcript.selected_source_country_id
         ? labels.countries.get(transcript.selected_source_country_id)
         : null,
@@ -548,11 +601,14 @@ export const Route = createFileRoute("/api/v1/transcripts")({
             const result = await processTranscriptOcrAndTranslation(parsed.transcript_id, user.id, {
               supabase,
               allowMockFallback: false,
+              transcriptAiProviderOptions: { allowMockFallback: false },
             });
+            const handledError = processingResultError(result, parsed.transcript_id);
             return json({
               success: true,
               data: {
                 result,
+                error: handledError,
                 review: await buildReviewData(supabase, user.id, parsed.transcript_id),
               },
             });

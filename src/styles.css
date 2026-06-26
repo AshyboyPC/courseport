@@ -149,6 +149,37 @@ select {
   -webkit-tap-highlight-color: transparent;
 }
 
+button,
+a[role="button"],
+a[href] {
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+button:not(:disabled):active,
+a[role="button"]:active,
+a[href]:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+button:focus-visible,
+a[href]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(1, 195, 173, 0.35);
+  outline-offset: 3px;
+}
+
+button:disabled,
+button[aria-busy="true"] {
+  cursor: wait;
+}
+
 @keyframes passport-in {
   from {
     opacity: 0;

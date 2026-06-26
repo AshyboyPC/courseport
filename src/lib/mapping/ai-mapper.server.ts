@@ -1,6 +1,6 @@
 import { getStructuredOutputProvider } from "@/lib/ai/structured-output/structured-output-service.server";
 import type { StructuredCourseMappingInput } from "@/lib/ai/structured-output/types";
-import { normalizeCourseName } from "@/lib/mapping/subject-taxonomy";
+import { normalizeCourseName, normalizeSubjectCategory } from "@/lib/mapping/subject-taxonomy";
 import type {
   CourseMappingCandidate,
   MappingContext,
@@ -61,8 +61,8 @@ export async function tryStructuredAiMapping(
     normalized_course_name:
       result.output.normalized_course_name ||
       normalizeCourseName(course.course_name_translated || course.course_name_original),
-    source_subject_category: result.output.source_subject_category,
-    mapped_subject_category: result.output.mapped_subject_category,
+    source_subject_category: normalizeSubjectCategory(result.output.source_subject_category),
+    mapped_subject_category: normalizeSubjectCategory(result.output.mapped_subject_category),
     probable_destination_equivalent: result.output.probable_destination_equivalent,
     requirement_bucket: result.output.requirement_bucket,
     possible_credit_value: result.output.possible_credit_value,

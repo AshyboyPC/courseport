@@ -36,6 +36,7 @@ import {
   startCreditMapping,
   startTranscriptProcessing,
   switchSelectedSourceFramework,
+  TranscriptApiError,
   updateCreditMapping,
   type CreditMapping,
   type Transcript,
@@ -46,10 +47,12 @@ import {
 export const Route = createFileRoute("/transcript")({ component: TranscriptPage });
 
 const processingMessages = [
-  "Reading transcript…",
-  "Detecting language…",
-  "Translating academic text…",
-  "Extracting subjects and grades…",
+  "Uploading transcript securely…",
+  "Running Google Document AI…",
+  "Detecting language and layout…",
+  "Translating academic text when needed…",
+  "Understanding transcript rows…",
+  "Preparing editable review…",
 ];
 
 function TranscriptPage() {
@@ -64,6 +67,7 @@ function TranscriptPage() {
   });
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [confirmingCourses, setConfirmingCourses] = useState(false);
   const [mappingProcessing, setMappingProcessing] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
 
@@ -98,12 +102,16 @@ function TranscriptPage() {
       if (!storageUploaded) {
         toast.error("Private storage upload failed. Manual entry is available.");
       } else {
-        await startTranscriptProcessing(transcript.id);
-        toast.success("Transcript is ready for review.");
+        const processed = await startTranscriptProcessing(transcript.id);
+        if (processed.transcript?.requires_manual_entry) {
+          toast.error("Live processing needs setup. Manual entry is available.");
+        } else {
+          toast.success("Transcript is ready for review.");
+        }
       }
       await refreshTranscriptData();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed.");
+      toast.error(formatTranscriptError(error, "Upload failed."));
       await refreshTranscriptData();
     } finally {
       setUploading(false);
@@ -119,19 +127,22 @@ function TranscriptPage() {
       toast.success("Transcript processing finished. Review is required.");
       await refreshTranscriptData();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Retry failed.");
+      toast.error(formatTranscriptError(error, "Retry failed."));
     } finally {
       setProcessing(false);
     }
   }
 
   async function confirm(transcriptId: string) {
+    setConfirmingCourses(true);
     try {
       await confirmTranscriptCourses(transcriptId);
       toast.success("Confirmed courses saved for future mapping.");
       await refreshTranscriptData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to confirm courses.");
+    } finally {
+      setConfirmingCourses(false);
     }
   }
 
@@ -175,13 +186,18 @@ function TranscriptPage() {
   const isProcessing =
     processing ||
     transcript?.ocr_status === "processing" ||
-    transcript?.translation_status === "processing";
+    transcript?.translation_status === "processing" ||
+    transcript?.ai_extraction_status === "processing" ||
+    transcript?.processing_status === "ai_extraction";
   const isConfirmed = transcript?.confirmation_status === "confirmed";
   const failedOrManual =
     transcript?.ocr_status === "manual_entry" ||
     transcript?.ocr_status === "failed" ||
     transcript?.translation_status === "manual_entry" ||
-    transcript?.translation_status === "failed";
+    transcript?.translation_status === "failed" ||
+    transcript?.ai_extraction_status === "failed" ||
+    transcript?.ai_extraction_status === "skipped" ||
+    transcript?.requires_manual_entry === true;
 
   return (
     <PassportShell
@@ -253,6 +269,7 @@ function TranscriptPage() {
                 }
                 onRefresh={refreshTranscriptData}
                 onConfirm={() => void confirm(transcript.id)}
+                confirming={confirmingCourses}
               />
             )}
           </section>
@@ -359,16 +376,78 @@ function ProcessingState({ text }: { text: string }) {
   );
 }
 
+function friendlyStageTitle(stage?: string | null, code?: string | null) {
+  if (code === "provider_not_configured") return "Provider setup missing";
+  if (code === "provider_billing_unavailable") return "Provider billing or credits unavailable";
+  if (code === "provider_quota_unavailable") return "Provider quota unavailable";
+  if (stage === "auth") return "Authentication failed";
+  if (stage === "ownership") return "Access denied";
+  if (stage === "storage_download" || stage === "storage_upload") return "File retrieval failed";
+  if (stage === "mime_detection") return "File type validation failed";
+  if (stage === "google_request" || stage === "google_response") return "Google OCR failed";
+  if (stage === "ocr_empty_response") return "OCR returned no readable text";
+  if (stage === "ai_extraction" && code === "provider_not_configured") {
+    return "AI extraction skipped";
+  }
+  if (stage === "ai_extraction") return "AI extraction failed";
+  if (stage === "parser") return "Transcript parsing failed";
+  if (stage === "candidate_save") return "Review row save failed";
+  if (stage === "frontend_fetch") return "Frontend fetch failed";
+  if (stage === "backend_request_received") return "Backend route failed";
+  return "Manual entry required";
+}
+
+function formatTranscriptError(error: unknown, fallback: string) {
+  if (error instanceof TranscriptApiError) {
+    return `${friendlyStageTitle(error.stage, error.code)}: ${error.message}`;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
 function FailureState({ transcript, onRetry }: { transcript: Transcript; onRetry: () => void }) {
+  const stage = transcript.processing_stage ?? transcript.ocr_error_stage;
+  const stageLabel = stage ? stage.replaceAll("_", " ") : "processing";
+  const code =
+    transcript.processing_error_code ??
+    transcript.ocr_error_code ??
+    transcript.ai_extraction_error_code;
+  const codeLabel = code ? ` (${code})` : "";
+  const errorMessage =
+    transcript.processing_error_message ||
+    transcript.ocr_error_message ||
+    transcript.ai_extraction_error_message ||
+    transcript.ai_extraction_error ||
+    transcript.ocr_error ||
+    transcript.translation_error ||
+    "OCR or AI extraction could not complete.";
+  const title = friendlyStageTitle(transcript.ocr_error_stage ?? stage, code);
+  const guidance =
+    code === "provider_not_configured"
+      ? "Provider setup is missing. Add the server-side API configuration, then retry live processing."
+      : code === "provider_billing_unavailable"
+        ? "Provider billing or credits may not be enabled. Enable billing or credits in the provider console, then retry."
+        : code === "provider_quota_unavailable"
+          ? "Provider quota or rate limit is blocking this request. Retry after quota is available."
+          : "Retry live processing after fixing the setup, or add course rows manually.";
   return (
     <div className="grid min-h-[360px] place-items-center p-8 text-center">
       <div className="max-w-lg">
         <AlertTriangle className="mx-auto h-10 w-10 text-[#E65234]" />
-        <h3 className="mt-4 font-display text-xl font-bold">Manual entry is ready</h3>
-        <p className="mt-2 text-sm leading-6 text-[#5A6380]">
-          {transcript.ocr_error ||
-            transcript.translation_error ||
-            "OCR or translation could not complete."}
+        <h3 className="mt-4 font-display text-xl font-bold">{title}</h3>
+        <p className="mt-2 text-xs font-bold uppercase tracking-[.14em] text-[#B45B00]">
+          Failed at {stageLabel}
+          {codeLabel}
+        </p>
+        <p className="mt-2 text-sm leading-6 text-[#5A6380]">{errorMessage}</p>
+        {transcript.ocr_raw_text && (
+          <p className="mt-2 text-xs leading-5 text-[#5A6380]">
+            Google OCR text was saved. You can retry extraction or enter course rows manually from
+            the preserved transcript text.
+          </p>
+        )}
+        <p className="mt-2 text-xs leading-5 text-[#5A6380]">
+          Your uploaded file is still attached. {guidance}
         </p>
         <button
           onClick={onRetry}
@@ -387,12 +466,14 @@ function ReviewState({
   profileName,
   onRefresh,
   onConfirm,
+  confirming,
 }: {
   transcript: Transcript;
   candidates: TranscriptCourseCandidate[];
   profileName: string;
   onRefresh: () => Promise<void>;
   onConfirm: () => void;
+  confirming: boolean;
 }) {
   const mismatch = transcript.framework_match_status !== "matched_profile";
   return (
@@ -426,11 +507,13 @@ function ReviewState({
             <p className="text-xs text-[#5A6380]">Review required before future mapping.</p>
           </div>
           <button
-            disabled={!candidates.length}
+            disabled={!candidates.length || confirming}
+            aria-busy={confirming}
             onClick={onConfirm}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#01C3AD] px-4 text-xs font-bold text-[#060F3D] disabled:opacity-50"
           >
-            <Check className="h-4 w-4" /> Confirm final course list
+            {confirming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            {confirming ? "Confirming…" : "Confirm final course list"}
           </button>
         </div>
         <div className="mt-4 space-y-3">
@@ -471,12 +554,14 @@ function FrameworkReview({
   mismatch: boolean;
   onRefresh: () => Promise<void>;
 }) {
+  const [choosing, setChoosing] = useState<string | null>(null);
   const detected =
     transcript.detected_source_curriculum_label ||
     transcript.detected_source_jurisdiction_label ||
     transcript.detected_source_country_label ||
     "Not detected";
   async function choose(method: "profile_default" | "ocr_detected" | "counselor_review") {
+    setChoosing(method);
     try {
       if (method === "counselor_review") {
         await markTranscriptForCounselorReview(transcript.id);
@@ -487,6 +572,8 @@ function FrameworkReview({
       toast.success("Framework choice saved.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to save framework choice.");
+    } finally {
+      setChoosing(null);
     }
   }
 
@@ -512,14 +599,20 @@ function FrameworkReview({
             <ChoiceButton
               onClick={() => void choose("profile_default")}
               label="Use my profile framework"
+              busy={choosing === "profile_default"}
+              disabled={Boolean(choosing)}
             />
             <ChoiceButton
               onClick={() => void choose("ocr_detected")}
               label="Use detected transcript framework"
+              busy={choosing === "ocr_detected"}
+              disabled={Boolean(choosing)}
             />
             <ChoiceButton
               onClick={() => void choose("counselor_review")}
               label="Mark for counselor review"
+              busy={choosing === "counselor_review"}
+              disabled={Boolean(choosing)}
             />
           </div>
         </div>
@@ -550,6 +643,7 @@ function CandidateEditor({
     needs_review: candidate.needs_review,
   });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function save() {
     setSaving(true);
@@ -565,12 +659,15 @@ function CandidateEditor({
   }
 
   async function remove() {
+    setDeleting(true);
     try {
       await deleteTranscriptCandidate(candidate.id);
       await onRefresh();
       toast.success("Candidate removed.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to delete row.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -628,13 +725,17 @@ function CandidateEditor({
         </p>
         <div className="flex gap-2">
           <button
+            disabled={deleting || saving}
+            aria-busy={deleting}
             onClick={() => void remove()}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#F2CAC1] px-3 text-xs font-bold text-[#B8432E]"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#F2CAC1] px-3 text-xs font-bold text-[#B8432E] disabled:opacity-60"
           >
-            <Trash2 className="h-4 w-4" /> Delete
+            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {deleting ? "Deleting…" : "Delete"}
           </button>
           <button
             disabled={saving}
+            aria-busy={saving}
             onClick={() => void save()}
             className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#0A175A] px-3 text-xs font-bold text-white disabled:opacity-60"
           >

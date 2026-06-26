@@ -1,6 +1,6 @@
 # Scholaport OCR Transcript Processing
 
-**Updated:** June 25, 2026
+**Updated:** June 26, 2026
 
 ## What is implemented
 
@@ -12,10 +12,11 @@ Scholaport now has the first real transcript-processing path:
 4. OCR output is normalized into one internal shape.
 5. Language detection runs from provider language hints first, then deterministic script fallback.
 6. Non-English academic text is translated into English.
-7. Deterministic parsing extracts course candidates.
-8. Detected source framework is compared with the onboarding profile.
-9. Candidates are saved to `transcript_course_candidates`.
-10. Only after student confirmation are rows copied into `transcript_courses`.
+7. AI document understanding extracts transcript metadata and course candidates from real OCR text.
+8. Extracted course candidates are validated against OCR-backed evidence.
+9. Detected source framework is compared with the onboarding profile.
+10. Candidates are saved to `transcript_course_candidates`.
+11. Only after student confirmation are rows copied into `transcript_courses`.
 
 ## OCR provider chain
 
@@ -25,6 +26,27 @@ Provider priority:
 2. Azure Document Intelligence: `AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT`, `AZURE_DOCUMENT_INTELLIGENCE_KEY`
 
 Production processing does not use Mistral, AWS Textract, or mock OCR. The mock OCR provider remains only for direct tests/local developer fixtures and is not enabled by `/api/v1/transcripts`. If no Google or Azure live OCR provider is configured, the transcript moves to manual-entry review.
+
+## AI document understanding
+
+After OCR succeeds, Scholaport runs an AI extraction provider to understand transcript structure without hardcoding one marksheet format.
+
+Provider priority:
+
+1. OpenAI transcript extraction: `OPENAI_API_KEY`, optional `OPENAI_TRANSCRIPT_MODEL`
+2. Gemini transcript extraction: `GEMINI_API_KEY`, optional `GEMINI_TRANSCRIPT_MODEL`
+
+The production API disables mock AI extraction. ChatGPT Plus and Google AI Pro app subscriptions are not API credentials for this backend; Scholaport needs server-side API keys in `.env.local`.
+
+The AI extractor may identify:
+
+- student and school labels
+- board/curriculum/jurisdiction signals
+- document type or exam/certificate labels
+- academic year and grade level
+- course rows, marks, max marks, terms, credits, and review reasons
+
+Every AI course row must be grounded in OCR text. `src/lib/transcript-ai/transcript-extraction-validator.ts` skips AI candidates that cannot be traced to the OCR result. Rows are still editable and unconfirmed until the student reviews them.
 
 ## OCR normalization
 
@@ -59,7 +81,9 @@ Ambiguous language detection sets review warnings and contributes to `needs_revi
 
 ## Parser behavior
 
-`src/lib/ocr/transcript-parser.server.ts` is deterministic first:
+`src/lib/ocr/transcript-parser.server.ts` remains available as a deterministic parser and testable fallback. The live processing service now uses AI extraction after real OCR, then validates the AI output against OCR evidence.
+
+The deterministic parser:
 
 - uses OCR tables when available
 - recognizes translated and original headers
@@ -106,9 +130,28 @@ Manual fallback is used when:
 - no live OCR provider is configured
 - live OCR fails
 - translation fails
-- no parseable table or course rows are found
+- no AI extraction provider is configured
+- AI extraction fails
+- AI extraction returns no OCR-backed course rows
 
 Manual rows are added as `entry_method = 'manual_entry'`, remain editable, and are not saved to `transcript_courses` until confirmed.
+
+## Processing diagnostics
+
+The transcript row stores safe stage diagnostics so the UI can distinguish configuration, storage, MIME, Google OCR, translation, AI extraction, and candidate-save failures. Key fields include:
+
+- `processing_status`
+- `processing_stage`
+- `processing_error_code`
+- `processing_error_message`
+- `ocr_error_stage`
+- `ocr_error_code`
+- `ai_extraction_status`
+- `ai_extraction_provider`
+- `ai_extraction_model`
+- `requires_manual_entry`
+
+Raw OCR JSON and AI raw JSON are private backend records and are stripped from the review API response.
 
 ## Security
 
@@ -125,11 +168,12 @@ Manual rows are added as `entry_method = 'manual_entry'`, remain editable, and a
 Ready:
 
 - private upload
-- server OCR provider selection
+- server Google Document AI OCR provider selection
+- server AI document-understanding provider selection
 - server translation provider selection
 - Tamil/Spanish academic translation tests
 - language detection fallback
-- candidate parsing
+- OCR-backed candidate extraction
 - side-by-side review UI
 - framework mismatch UI
 - manual entry fallback
@@ -137,6 +181,7 @@ Ready:
 
 Needs real credentials:
 
-- Google Document AI credentials or Azure Document Intelligence credentials
-- Gemini or OpenAI translation credentials
+- Google Document AI credentials
+- OpenAI API key for transcript AI extraction, or Gemini API key if selected later
+- Gemini or OpenAI translation credentials for non-English translation
 - applied Supabase migration in the target project

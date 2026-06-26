@@ -176,10 +176,19 @@ function numberFromText(text: string | null | undefined) {
 function classifySubject(translatedCourseName: string | null | undefined) {
   const lower = normalizeToken(translatedCourseName ?? "");
   if (!lower) return null;
-  if (/(mathematics|math|algebra|geometry|calculus|statistics)/.test(lower)) return "Mathematics";
-  if (/(science|biology|physics|chemistry|environmental|life science|earth science)/.test(lower))
+  if (/(mathematics|math|maths|algebra|geometry|calculus|statistics|கணிதம்|गणित)/.test(lower))
+    return "Mathematics";
+  if (
+    /(science|biology|physics|chemistry|environmental|life science|earth science|உயிரியல்|இயற்பியல்|வேதியியல்|विज्ञान|भौतिकी|रसायन|जीवविज्ञान)/.test(
+      lower,
+    )
+  )
     return "Science";
-  if (/(social science|social studies|history|geography|civics|economics|government)/.test(lower))
+  if (
+    /(social science|social studies|history|geography|civics|economics|government|சமூக அறிவியல்|इतिहास|भूगोल|नागरिक)/.test(
+      lower,
+    )
+  )
     return "Social Studies";
   if (
     /(english|language arts|literature|writing|tamil|hindi|urdu|arabic|spanish|filipino|bengali|russian|ukrainian|mandarin|chinese)/.test(
@@ -192,6 +201,30 @@ function classifySubject(translatedCourseName: string | null | undefined) {
   if (/(physical education|health|sports)/.test(lower)) return "Health / Physical Education";
   if (/(art|music|dance|fine arts|visual arts)/.test(lower)) return "Fine Arts";
   return null;
+}
+
+function looksLikeCourseName(text: string) {
+  const normalized = normalizeToken(text);
+  if (!normalized || normalized.length < 2) return false;
+  if (
+    /^(total|grand total|result|pass|fail|date|signature|register no|roll no|student name)$/.test(
+      normalized,
+    )
+  ) {
+    return false;
+  }
+  if (
+    FIELD_LABELS.some(([, labels]) =>
+      labels.some((label) => normalized.includes(normalizeToken(label))),
+    )
+  ) {
+    return false;
+  }
+  return (
+    Boolean(classifySubject(text)) ||
+    /[A-Za-z]{3,}/.test(text) ||
+    /(?:\p{Script=Tamil}|\p{Script=Devanagari}|\p{Script=Arabic}|\p{Script=Han})/u.test(text)
+  );
 }
 
 function normalizedCourseName(translated: string | null, original: string) {
@@ -322,6 +355,73 @@ function pipeTablesFromText(text: string) {
   return rows;
 }
 
+function parseLineBasedRows(input: {
+  text: string;
+  languageCode: string | null;
+  translation?: AcademicTranslationResult | null;
+}) {
+  const candidates: TranscriptCourseCandidateInput[] = [];
+  const lines = input.text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    if (line.includes("|")) continue;
+    const cleaned = line.replace(/\s{2,}/g, " ").trim();
+    const scorePair = cleaned.match(
+      /(.+?)\s+(\d{1,3}(?:\.\d+)?)\s*(?:\/|out of|of)\s*(\d{1,3}(?:\.\d+)?)/i,
+    );
+    const trailingScore = cleaned.match(/(.+?)\s+(\d{1,3}(?:\.\d+)?)\s*$/);
+    const match = scorePair ?? trailingScore;
+    if (!match) continue;
+    const originalCourseName = match[1]?.replace(/[:：-]+$/g, "").trim();
+    const gradeOriginal = match[2] ?? null;
+    const maxMarks = scorePair?.[3] ?? null;
+    if (!originalCourseName || !looksLikeCourseName(originalCourseName)) continue;
+
+    const translatedCourseName = translatedFor(originalCourseName, input.translation);
+    const subjectCategory = classifySubject(translatedCourseName);
+    const translationConfidence = translationConfidenceFor(originalCourseName, input.translation);
+    candidates.push(
+      finalizeCandidateReview(
+        {
+          course_name_original: originalCourseName,
+          course_name_translated:
+            translatedCourseName === originalCourseName ? null : translatedCourseName,
+          course_name_normalized: normalizedCourseName(translatedCourseName, originalCourseName),
+          original_language_code: input.languageCode,
+          translated_language_code: translatedCourseName === originalCourseName ? null : "en",
+          subject_category: subjectCategory,
+          grade_original: maxMarks ? `${gradeOriginal}/${maxMarks}` : gradeOriginal,
+          grade_normalized: numberFromText(gradeOriginal),
+          grade_scale_original: maxMarks,
+          max_marks: maxMarks,
+          credits_or_units: null,
+          term_label_original: null,
+          term_label_translated: null,
+          academic_year: null,
+          grade_level: null,
+          page_number: null,
+          source_text: line,
+          translated_source_text: translatedFor(line, input.translation),
+          bounding_box_json: null,
+          extraction_confidence: 0.68,
+          translation_confidence: translationConfidence,
+          entry_method: input.translation?.provider ? "ocr_translated" : "ocr_extracted",
+          student_confirmed: false,
+          needs_review: true,
+          review_reason: "Line-based transcript extraction needs review.",
+        },
+        translationConfidence != null && requiresTranslationReview(translationConfidence)
+          ? ["Possible translation needs review."]
+          : [],
+      ),
+    );
+  }
+  return candidates;
+}
+
 function extractFields(
   text: string,
   translation?: AcademicTranslationResult | null,
@@ -380,6 +480,16 @@ export function parseTranscriptCandidates(input: {
     });
     courses.push(...lineCourses);
     tableDetected = lineCourses.length > 0;
+  }
+
+  if (!courses.length) {
+    courses.push(
+      ...parseLineBasedRows({
+        text: input.translation?.translatedText ?? input.ocr.rawText,
+        languageCode: input.primaryLanguageCode,
+        translation: input.translation,
+      }),
+    );
   }
 
   if (!tableDetected)

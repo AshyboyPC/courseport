@@ -81,6 +81,9 @@ export const TranscriptSchema = z.object({
   ocr_started_at: nullableString.optional(),
   ocr_completed_at: nullableString.optional(),
   ocr_error: nullableString.optional(),
+  ocr_error_code: nullableString.optional(),
+  ocr_error_message: nullableString.optional(),
+  ocr_error_stage: nullableString.optional(),
   ocr_raw_text: nullableString.optional(),
   ocr_confidence: z.coerce.number().nullable().optional(),
   ocr_page_count: z.number().int().nullable().optional(),
@@ -93,9 +96,34 @@ export const TranscriptSchema = z.object({
   translation_error: nullableString.optional(),
   translated_text_en: nullableString.optional(),
   translation_confidence: z.coerce.number().nullable().optional(),
+  uploaded_file_path: nullableString.optional(),
+  uploaded_file_name: nullableString.optional(),
+  uploaded_file_mime_type: nullableString.optional(),
+  uploaded_file_size_bytes: z.coerce.number().nullable().optional(),
+  processing_status: z.string().default("not_started").optional(),
+  processing_stage: nullableString.optional(),
+  processing_error_code: nullableString.optional(),
+  processing_error_message: nullableString.optional(),
+  processing_started_at: nullableString.optional(),
+  processing_completed_at: nullableString.optional(),
+  requires_manual_entry: z.boolean().default(false).optional(),
+  ai_extraction_status: z.string().default("not_started").optional(),
+  ai_extraction_provider: nullableString.optional(),
+  ai_extraction_model: nullableString.optional(),
+  ai_extraction_error: nullableString.optional(),
+  ai_extraction_error_code: nullableString.optional(),
+  ai_extraction_error_message: nullableString.optional(),
+  detected_language_codes: z.array(z.string()).default([]).optional(),
   detected_source_country_id: z.string().uuid().nullable().optional(),
   detected_source_jurisdiction_id: z.string().uuid().nullable().optional(),
   detected_source_curriculum_id: z.string().uuid().nullable().optional(),
+  detected_source_country: nullableString.optional(),
+  detected_source_jurisdiction: nullableString.optional(),
+  detected_source_curriculum: nullableString.optional(),
+  detected_document_type: nullableString.optional(),
+  profile_match_status: z.string().default("not_checked").optional(),
+  profile_match_confidence: z.coerce.number().nullable().optional(),
+  requires_source_confirmation: z.boolean().default(false).optional(),
   selected_source_country_id: z.string().uuid().nullable().optional(),
   selected_source_jurisdiction_id: z.string().uuid().nullable().optional(),
   selected_source_curriculum_id: z.string().uuid().nullable().optional(),
@@ -572,6 +600,34 @@ function throwIfError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
 
+export class TranscriptApiError extends Error {
+  stage: string;
+  code: string;
+  status: string;
+  retryable: boolean;
+  manualEntryAvailable: boolean;
+  transcriptId: string | null;
+
+  constructor(error: {
+    message?: string;
+    stage?: string;
+    code?: string;
+    status?: string;
+    retryable?: boolean;
+    manualEntryAvailable?: boolean;
+    transcriptId?: string | null;
+  }) {
+    super(error.message || "Transcript operation failed.");
+    this.name = "TranscriptApiError";
+    this.stage = error.stage ?? "frontend_fetch";
+    this.code = error.code ?? "frontend_fetch_failed";
+    this.status = error.status ?? "failed";
+    this.retryable = error.retryable ?? true;
+    this.manualEntryAvailable = error.manualEntryAvailable ?? false;
+    this.transcriptId = error.transcriptId ?? null;
+  }
+}
+
 async function authenticatedTranscriptFetch<T>(
   init: RequestInit & { query?: URLSearchParams } = {},
 ): Promise<T> {
@@ -583,21 +639,58 @@ async function authenticatedTranscriptFetch<T>(
   const url = init.query?.toString()
     ? `/api/v1/transcripts?${init.query.toString()}`
     : "/api/v1/transcripts";
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${token}`,
-      ...(init.headers ?? {}),
-    },
-  });
-  const body = (await response.json()) as {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new TranscriptApiError({
+      message:
+        "The transcript backend route could not be reached. Check that the local server is running, then retry.",
+      stage: "frontend_fetch",
+      code: "frontend_fetch_failed",
+      status: "failed",
+      retryable: true,
+      manualEntryAvailable: false,
+    });
+  }
+  const rawBody = await response.text();
+  let body: {
     success?: boolean;
     data?: unknown;
-    error?: { message?: string };
+    error?: {
+      message?: string;
+      stage?: string;
+      code?: string;
+      status?: string;
+      retryable?: boolean;
+      manualEntryAvailable?: boolean;
+      transcriptId?: string | null;
+    };
   };
+  try {
+    body = rawBody
+      ? (JSON.parse(rawBody) as typeof body)
+      : { success: false, error: { message: "Transcript API returned an empty response." } };
+  } catch {
+    throw new TranscriptApiError({
+      message:
+        "The transcript backend returned a non-JSON response. This usually means the route crashed before Scholaport could format the error.",
+      stage: "backend_request_received",
+      code: "non_json_backend_response",
+      status: "failed",
+      retryable: true,
+      manualEntryAvailable: false,
+    });
+  }
   if (!response.ok || body.success === false) {
-    throw new Error(body.error?.message ?? "Transcript operation failed.");
+    throw new TranscriptApiError(body.error ?? { message: "Transcript operation failed." });
   }
   return body.data as T;
 }
@@ -1287,6 +1380,12 @@ export async function createTranscriptUpload(
       storage_error: storageResult.error?.message ?? null,
       upload_status: storageUploaded ? "uploaded_processing" : "uploaded_metadata_only",
       status: "pending",
+      processing_status: storageUploaded ? "uploaded" : "storage_upload_failed",
+      uploaded_file_path: storageUploaded ? storagePath : null,
+      uploaded_file_name: file.name,
+      uploaded_file_mime_type: file.type || null,
+      uploaded_file_size_bytes: file.size,
+      requires_manual_entry: !storageUploaded,
     })
     .select("*")
     .single();

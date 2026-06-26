@@ -1,8 +1,8 @@
--- Scholaport transcript OCR + translation + confirmation foundation.
--- This migration is additive: OCR candidate rows stay separate from usable transcript_courses
--- until the student confirms them.
+-- Transcript AI extraction and staged processing diagnostics.
+-- Additive follow-up that is safe even when only part of the transcript OCR migration exists.
 
 alter table public.transcripts add column if not exists ocr_status text not null default 'not_started';
+alter table public.transcripts add column if not exists ocr_provider text;
 alter table public.transcripts add column if not exists ocr_started_at timestamptz;
 alter table public.transcripts add column if not exists ocr_completed_at timestamptz;
 alter table public.transcripts add column if not exists ocr_error text;
@@ -61,68 +61,65 @@ alter table public.transcripts add column if not exists requires_user_confirmati
 alter table public.transcripts add column if not exists confirmed_at timestamptz;
 alter table public.transcripts add column if not exists confirmation_status text not null default 'not_started';
 
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_ocr_status_check
-    check (ocr_status in ('not_started','queued','processing','succeeded','failed','needs_review','manual_entry'));
-exception when duplicate_object then null;
-end $$;
+alter table public.transcripts
+  drop constraint if exists transcripts_ocr_error_stage_check;
+alter table public.transcripts
+  add constraint transcripts_ocr_error_stage_check
+  check (
+    ocr_error_stage is null
+    or ocr_error_stage in (
+      'config_validation',
+      'storage_download',
+      'mime_detection',
+      'google_request',
+      'google_response',
+      'ocr_empty_response',
+      'ai_extraction',
+      'translation',
+      'parser',
+      'candidate_save'
+    )
+  );
 
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_ocr_error_stage_check
-    check (ocr_error_stage is null or ocr_error_stage in ('config_validation','storage_download','mime_detection','google_request','google_response','ocr_empty_response','ai_extraction','translation','parser','candidate_save'));
-exception when duplicate_object then null;
-end $$;
+alter table public.transcripts
+  drop constraint if exists transcripts_processing_stage_check;
+alter table public.transcripts
+  add constraint transcripts_processing_stage_check
+  check (
+    processing_stage is null
+    or processing_stage in (
+      'upload_started',
+      'upload_saved',
+      'transcript_row_created',
+      'file_retrieved',
+      'file_validation_failed',
+      'google_config_validation_failed',
+      'google_ocr_started',
+      'google_ocr_failed',
+      'google_ocr_completed',
+      'translation_started',
+      'translation_failed',
+      'ai_extraction_started',
+      'ai_extraction_failed',
+      'ai_extraction_completed',
+      'parse_validation_failed',
+      'review_ready',
+      'manual_entry_required',
+      'confirmed'
+    )
+  );
 
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_processing_stage_check
-    check (processing_stage is null or processing_stage in ('upload_started','upload_saved','transcript_row_created','file_retrieved','file_validation_failed','google_config_validation_failed','google_ocr_started','google_ocr_failed','google_ocr_completed','translation_started','translation_failed','ai_extraction_started','ai_extraction_failed','ai_extraction_completed','parse_validation_failed','review_ready','manual_entry_required','confirmed'));
-exception when duplicate_object then null;
-end $$;
+alter table public.transcripts
+  drop constraint if exists transcripts_ai_extraction_status_check;
+alter table public.transcripts
+  add constraint transcripts_ai_extraction_status_check
+  check (ai_extraction_status in ('not_started','processing','succeeded','failed','needs_review','manual_entry','skipped'));
 
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_ai_extraction_status_check
-    check (ai_extraction_status in ('not_started','processing','succeeded','failed','needs_review','manual_entry','skipped'));
-exception when duplicate_object then null;
-end $$;
-
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_profile_match_status_check
-    check (profile_match_status in ('matches_profile','possible_match','mismatch','unknown','not_checked'));
-exception when duplicate_object then null;
-end $$;
-
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_translation_status_check
-    check (translation_status in ('not_needed','queued','processing','succeeded','failed','needs_review','manual_entry'));
-exception when duplicate_object then null;
-end $$;
-
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_source_selection_method_check
-    check (source_selection_method in ('profile_default','ocr_detected','student_override','manual_selection','counselor_review'));
-exception when duplicate_object then null;
-end $$;
-
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_framework_match_status_check
-    check (framework_match_status in ('matched_profile','detected_different_framework','ambiguous','not_detected','manual_required'));
-exception when duplicate_object then null;
-end $$;
-
-do $$
-begin
-  alter table public.transcripts add constraint transcripts_confirmation_status_check
-    check (confirmation_status in ('not_started','processing','needs_review','confirmed','manual_entry','counselor_review'));
-exception when duplicate_object then null;
-end $$;
+alter table public.transcripts
+  drop constraint if exists transcripts_profile_match_status_check;
+alter table public.transcripts
+  add constraint transcripts_profile_match_status_check
+  check (profile_match_status in ('matches_profile','possible_match','mismatch','unknown','not_checked'));
 
 alter table public.transcript_courses add column if not exists course_name_normalized text;
 alter table public.transcript_courses add column if not exists original_language_code text;
@@ -144,12 +141,11 @@ alter table public.transcript_courses add column if not exists student_confirmed
 alter table public.transcript_courses add column if not exists needs_review boolean not null default true;
 alter table public.transcript_courses add column if not exists review_reason text;
 
-do $$
-begin
-  alter table public.transcript_courses add constraint transcript_courses_entry_method_check
-    check (entry_method in ('ocr_extracted','ocr_translated','student_edited','manual_entry','profile_template','counselor_added'));
-exception when duplicate_object then null;
-end $$;
+alter table public.transcript_courses
+  drop constraint if exists transcript_courses_entry_method_check;
+alter table public.transcript_courses
+  add constraint transcript_courses_entry_method_check
+  check (entry_method in ('ocr_extracted','ocr_translated','student_edited','manual_entry','profile_template','counselor_added'));
 
 create table if not exists public.transcript_course_candidates (
   id uuid primary key default gen_random_uuid(),
