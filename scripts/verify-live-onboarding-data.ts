@@ -37,8 +37,12 @@ const countryByIso = new Map(countries.map((country) => [country.iso3, country])
 for (const iso3 of [...MVP_SOURCE_COUNTRY_ISO3, ...MVP_DESTINATION_COUNTRY_ISO3]) {
   assert(countryByIso.has(iso3), `Missing MVP country ${iso3}.`);
 }
-assert(getMvpVisibility("CAN") === "hidden", "Canada is not hidden.");
-assert(getMvpVisibility("AUS") === "hidden", "Australia is not hidden.");
+assert(getMvpVisibility("CAN") === "destination", "Canada is not a destination coming-soon row.");
+assert(
+  getMvpVisibility("AUS") === "destination",
+  "Australia is not a destination coming-soon row.",
+);
+assert(getMvpVisibility("FRA") === "hidden", "Unexpected hidden-country visibility changed.");
 
 const usableStatuses = new Set<string>(USABLE_REFERENCE_STATUSES);
 for (const [table, rows] of [
@@ -90,13 +94,34 @@ assert(
 );
 assert(programs.filter((row) => row.country_id === uaeId).length === 0, "UAE has a live program.");
 const usaId = countryByIso.get("USA")!.id;
+const indiaId = countryByIso.get("IND")!.id;
+const tamilNadu = jurisdictions.find(
+  (row) => row.country_id === indiaId && row.name === "Tamil Nadu" && row.code === "TN",
+);
+const andhraPradesh = jurisdictions.find(
+  (row) => row.country_id === indiaId && row.name === "Andhra Pradesh" && row.code === "AP",
+);
+assert(Boolean(tamilNadu), "Tamil Nadu source jurisdiction is missing.");
+assert(Boolean(andhraPradesh), "Andhra Pradesh source jurisdiction is missing.");
+const mvpSourceCurricula = curricula.filter(
+  (row) => row.jurisdiction_id === tamilNadu?.id || row.jurisdiction_id === andhraPradesh?.id,
+);
+assert(mvpSourceCurricula.length >= 4, "Tamil Nadu/Andhra Pradesh source curricula are missing.");
 const georgia = jurisdictions.find(
   (row) => row.country_id === usaId && row.name === "Georgia" && row.jurisdiction_type === "state",
 );
+const texas = jurisdictions.find(
+  (row) => row.country_id === usaId && row.name === "Texas" && row.jurisdiction_type === "state",
+);
 assert(Boolean(georgia), "Georgia planning jurisdiction is missing.");
+assert(Boolean(texas), "Texas planning jurisdiction is missing.");
 assert(
   frameworks.some((row) => row.country_id === usaId && row.jurisdiction_id === georgia.id),
   "Georgia's supported framework is missing.",
+);
+assert(
+  frameworks.some((row) => row.country_id === usaId && row.jurisdiction_id === texas.id),
+  "Texas's supported framework is missing.",
 );
 
 const coverage = countries
@@ -128,4 +153,6 @@ console.log(`source_curricula_counts=${JSON.stringify(sourceCounts)}`);
 console.log(`destination_detail_counts=${JSON.stringify(destinationCounts)}`);
 console.log("uae_honest_empty_state=PASS");
 console.log("georgia_framework_selection=PASS");
+console.log("texas_framework_selection=PASS");
+console.log("india_source_state_selection=PASS");
 console.log(`reference_coverage=${JSON.stringify(coverage)}`);

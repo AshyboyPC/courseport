@@ -3,7 +3,19 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-const MVP_COUNTRIES = ["IND", "CHN", "MEX", "PHL", "PAK", "USA", "DEU", "SAU", "GBR", "ARE"];
+const GENERIC_SEMANTIC_COUNTRIES = [
+  "CHN",
+  "MEX",
+  "PHL",
+  "PAK",
+  "USA",
+  "CAN",
+  "AUS",
+  "DEU",
+  "SAU",
+  "GBR",
+  "ARE",
+];
 
 function runNode(script: string, args: string[] = []) {
   return spawnSync(process.execPath, ["--experimental-strip-types", script, ...args], {
@@ -27,8 +39,8 @@ test("MVP-safe package excludes unresolved hidden-country detail", () => {
   assert.match(result.stdout, /mapping_rules: imported=0\b/);
 });
 
-test("all ten MVP countries have equal supported claims and zero semantic errors", () => {
-  for (const country of MVP_COUNTRIES) {
+test("completed non-India country packages have equal supported claims and zero semantic errors", () => {
+  for (const country of GENERIC_SEMANTIC_COUNTRIES) {
     const result = runNode("scripts/validate-semantic-reference-audit.ts", [
       `--country=${country}`,
     ]);
@@ -37,6 +49,17 @@ test("all ten MVP countries have equal supported claims and zero semantic errors
     const required = result.stdout.match(/required_material_claims=(\d+)/)?.[1];
     const supported = result.stdout.match(/supported_material_claims=(\d+)/)?.[1];
     assert.equal(supported, required, `${country} required/supported mismatch`);
+  }
+});
+
+test("India source-state foundations validate through dedicated state validators", () => {
+  for (const script of [
+    "scripts/validate-tamil-nadu-reference-foundation.ts",
+    "scripts/validate-andhra-pradesh-reference-foundation.ts",
+  ]) {
+    const result = runNode(script);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /No validation errors/);
   }
 });
 

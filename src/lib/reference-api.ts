@@ -1,9 +1,13 @@
 import { z } from "zod";
 import {
+  filterMvpDestinationCountries,
+  filterMvpSourceCountries,
   getMvpVisibility,
   MVP_DESTINATION_COUNTRY_ISO3,
   MVP_PRIORITY_COUNTRY_ISO3,
   MVP_SOURCE_COUNTRY_ISO3,
+  sortByMvpDestinationCountryOrder,
+  sortByMvpSourceCountryOrder,
   USABLE_REFERENCE_STATUSES,
   type MvpVisibility,
 } from "@/lib/mvp-reference-scope";
@@ -255,9 +259,13 @@ async function selectCountries(
 
 export const getPriorityCountries = () => selectCountries(undefined, MVP_PRIORITY_COUNTRY_ISO3);
 export const getSourceCountries = () =>
-  selectCountries("is_source_priority", MVP_SOURCE_COUNTRY_ISO3);
+  selectCountries("is_source_priority", MVP_SOURCE_COUNTRY_ISO3).then((countries) =>
+    sortByMvpSourceCountryOrder(filterMvpSourceCountries(countries)),
+  );
 export const getDestinationCountries = () =>
-  selectCountries("is_destination_priority", MVP_DESTINATION_COUNTRY_ISO3);
+  selectCountries("is_destination_priority", MVP_DESTINATION_COUNTRY_ISO3).then((countries) =>
+    sortByMvpDestinationCountryOrder(filterMvpDestinationCountries(countries)),
+  );
 
 export async function getCountryEducationProfile(countryId: string) {
   const client = requireSupabase();

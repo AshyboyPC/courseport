@@ -85,39 +85,80 @@ test("Tamil Nadu has curriculum courses for SSLC and HSC", () => {
   const tnCurricula = curricula.filter((row) => row.jurisdiction_id === tamilNadu.id);
   const tnCurriculumIds = new Set(tnCurricula.map((row) => row.id));
   const tnCourses = courses.filter((row) => tnCurriculumIds.has(row.curriculum_id));
-  assert.ok(tnCourses.length >= 80, `Expected at least 80 Tamil Nadu courses; found ${tnCourses.length}`);
+  assert.ok(
+    tnCourses.length >= 80,
+    `Expected at least 80 Tamil Nadu courses; found ${tnCourses.length}`,
+  );
 
   // SSLC core subjects
   const sslcId = tnCurricula.find((row) => row.name.includes("SSLC"))?.id;
   assert.ok(sslcId);
   const sslcCourses = tnCourses.filter((row) => row.curriculum_id === sslcId);
-  assert.ok(sslcCourses.some((row) => row.course_name_english === "Tamil"), "SSLC must have Tamil");
-  assert.ok(sslcCourses.some((row) => row.course_name_english === "English"), "SSLC must have English");
-  assert.ok(sslcCourses.some((row) => row.course_name_english === "Mathematics"), "SSLC must have Mathematics");
-  assert.ok(sslcCourses.some((row) => row.course_name_english === "Science"), "SSLC must have Science");
-  assert.ok(sslcCourses.some((row) => row.course_name_english === "Social Science"), "SSLC must have Social Science");
+  assert.ok(
+    sslcCourses.some((row) => row.course_name_english === "Tamil"),
+    "SSLC must have Tamil",
+  );
+  assert.ok(
+    sslcCourses.some((row) => row.course_name_english === "English"),
+    "SSLC must have English",
+  );
+  assert.ok(
+    sslcCourses.some((row) => row.course_name_english === "Mathematics"),
+    "SSLC must have Mathematics",
+  );
+  assert.ok(
+    sslcCourses.some((row) => row.course_name_english === "Science"),
+    "SSLC must have Science",
+  );
+  assert.ok(
+    sslcCourses.some((row) => row.course_name_english === "Social Science"),
+    "SSLC must have Social Science",
+  );
 
   // HSC stream subjects
   const hscId = tnCurricula.find((row) => row.name.includes("HSC"))?.id;
   assert.ok(hscId);
   const hscCourses = tnCourses.filter((row) => row.curriculum_id === hscId);
-  assert.ok(hscCourses.some((row) => row.course_name_english.includes("Physics")), "HSC must have Physics");
-  assert.ok(hscCourses.some((row) => row.course_name_english.includes("Chemistry")), "HSC must have Chemistry");
-  assert.ok(hscCourses.some((row) => row.course_name_english.includes("Biology")), "HSC must have Biology");
-  assert.ok(hscCourses.some((row) => row.course_name_english.includes("Accountancy")), "HSC must have Accountancy");
-  assert.ok(hscCourses.some((row) => row.course_name_english.includes("History")), "HSC must have History");
+  assert.ok(
+    hscCourses.some((row) => row.course_name_english.includes("Physics")),
+    "HSC must have Physics",
+  );
+  assert.ok(
+    hscCourses.some((row) => row.course_name_english.includes("Chemistry")),
+    "HSC must have Chemistry",
+  );
+  assert.ok(
+    hscCourses.some((row) => row.course_name_english.includes("Biology")),
+    "HSC must have Biology",
+  );
+  assert.ok(
+    hscCourses.some((row) => row.course_name_english.includes("Accountancy")),
+    "HSC must have Accountancy",
+  );
+  assert.ok(
+    hscCourses.some((row) => row.course_name_english.includes("History")),
+    "HSC must have History",
+  );
 });
 
 test("Tamil Nadu has no destination graduation frameworks", () => {
   const tnFrameworks = frameworks.filter((row) => row.jurisdiction_id === tamilNadu.id);
-  assert.equal(tnFrameworks.length, 0, "Tamil Nadu must not have destination graduation frameworks");
+  assert.equal(
+    tnFrameworks.length,
+    0,
+    "Tamil Nadu must not have destination graduation frameworks",
+  );
 });
 
 test("Tamil Nadu has no destination graduation requirements", () => {
   const tnFrameworks = frameworks.filter((row) => row.jurisdiction_id === tamilNadu.id);
   const tnFrameworkIds = new Set(tnFrameworks.map((row) => row.id));
   const tnRequirements = requirements.filter((row) => tnFrameworkIds.has(row.framework_id));
-  assert.equal(tnRequirements.length, 0, "Tamil Nadu must not have destination graduation requirements");
+  assert.equal(
+    tnRequirements.length,
+    0,
+    "Tamil Nadu must not have destination graduation requirements",
+  );
 });
 
 test("Tamil Nadu jurisdiction identity fields have provenance", () => {
@@ -160,15 +201,25 @@ test("Tamil Nadu curricula have provenance for name", () => {
 
 test("Tamil Nadu has at least two data sources", () => {
   const tnSources = sources.filter((row) => row.jurisdiction_id === tamilNadu.id);
-  assert.ok(tnSources.length >= 2, `Expected at least 2 Tamil Nadu data sources; found ${tnSources.length}`);
+  assert.ok(
+    tnSources.length >= 2,
+    `Expected at least 2 Tamil Nadu data sources; found ${tnSources.length}`,
+  );
 });
 
 test("MVP onboarding only allows India→Tamil Nadu and Andhra Pradesh as verified source paths", () => {
   // Only Tamil Nadu and Andhra Pradesh should have verified/partial detail_coverage_status among India jurisdictions
   const verifiedIndiaJurisdictions = indiaJurisdictions.filter(
-    (row) => row.detail_coverage_status === "partial" || row.detail_coverage_status === "verified" || row.detail_coverage_status === "official",
+    (row) =>
+      row.detail_coverage_status === "partial" ||
+      row.detail_coverage_status === "verified" ||
+      row.detail_coverage_status === "official",
   );
-  assert.equal(verifiedIndiaJurisdictions.length, 2, "Only Tamil Nadu and Andhra Pradesh should have verified source data for MVP");
+  assert.equal(
+    verifiedIndiaJurisdictions.length,
+    2,
+    "Only Tamil Nadu and Andhra Pradesh should have verified source data for MVP",
+  );
   const codes = verifiedIndiaJurisdictions.map((row) => row.code).sort();
   assert.deepEqual(codes, ["AP", "TN"]);
 });
@@ -201,43 +252,96 @@ test("Andhra Pradesh has curriculum courses for SSC and Intermediate", () => {
   const apCurricula = curricula.filter((row) => row.jurisdiction_id === andhraPradesh.id);
   const apCurriculumIds = new Set(apCurricula.map((row) => row.id));
   const apCourses = courses.filter((row) => apCurriculumIds.has(row.curriculum_id));
-  assert.ok(apCourses.length >= 14, `Expected at least 14 Andhra Pradesh courses; found ${apCourses.length}`);
+  assert.ok(
+    apCourses.length >= 14,
+    `Expected at least 14 Andhra Pradesh courses; found ${apCourses.length}`,
+  );
 
   // SSC core subjects
   const sscId = apCurricula.find((row) => row.name.includes("SSC"))?.id;
   assert.ok(sscId);
   const sscCourses = apCourses.filter((row) => row.curriculum_id === sscId);
-  assert.ok(sscCourses.some((row) => row.course_name_english.includes("First Language")), "SSC must have First Language");
-  assert.ok(sscCourses.some((row) => row.course_name_english.includes("Second Language")), "SSC must have Second Language");
-  assert.ok(sscCourses.some((row) => row.course_name_english === "English"), "SSC must have English");
-  assert.ok(sscCourses.some((row) => row.course_name_english === "Mathematics"), "SSC must have Mathematics");
-  assert.ok(sscCourses.some((row) => row.course_name_english.includes("Physical Science")), "SSC must have Physical Science");
-  assert.ok(sscCourses.some((row) => row.course_name_english.includes("Biological Science")), "SSC must have Biological Science");
-  assert.ok(sscCourses.some((row) => row.course_name_english.includes("Social Studies")), "SSC must have Social Studies");
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english.includes("First Language")),
+    "SSC must have First Language",
+  );
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english.includes("Second Language")),
+    "SSC must have Second Language",
+  );
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english === "English"),
+    "SSC must have English",
+  );
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english === "Mathematics"),
+    "SSC must have Mathematics",
+  );
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english.includes("Physical Science")),
+    "SSC must have Physical Science",
+  );
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english.includes("Biological Science")),
+    "SSC must have Biological Science",
+  );
+  assert.ok(
+    sscCourses.some((row) => row.course_name_english.includes("Social Studies")),
+    "SSC must have Social Studies",
+  );
 
   // Intermediate stream subjects
   const interId = apCurricula.find((row) => row.name.includes("Intermediate"))?.id;
   assert.ok(interId);
   const interCourses = apCourses.filter((row) => row.curriculum_id === interId);
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Physics")), "Intermediate must have Physics");
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Chemistry")), "Intermediate must have Chemistry");
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Mathematics")), "Intermediate must have Mathematics");
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Botany")), "Intermediate must have Botany");
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Zoology")), "Intermediate must have Zoology");
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Economics")), "Intermediate must have Economics");
-  assert.ok(interCourses.some((row) => row.course_name_english.includes("Commerce")), "Intermediate must have Commerce");
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Physics")),
+    "Intermediate must have Physics",
+  );
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Chemistry")),
+    "Intermediate must have Chemistry",
+  );
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Mathematics")),
+    "Intermediate must have Mathematics",
+  );
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Botany")),
+    "Intermediate must have Botany",
+  );
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Zoology")),
+    "Intermediate must have Zoology",
+  );
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Economics")),
+    "Intermediate must have Economics",
+  );
+  assert.ok(
+    interCourses.some((row) => row.course_name_english.includes("Commerce")),
+    "Intermediate must have Commerce",
+  );
 });
 
 test("Andhra Pradesh has no destination graduation frameworks", () => {
   const apFrameworks = frameworks.filter((row) => row.jurisdiction_id === andhraPradesh.id);
-  assert.equal(apFrameworks.length, 0, "Andhra Pradesh must not have destination graduation frameworks");
+  assert.equal(
+    apFrameworks.length,
+    0,
+    "Andhra Pradesh must not have destination graduation frameworks",
+  );
 });
 
 test("Andhra Pradesh has no destination graduation requirements", () => {
   const apFrameworks = frameworks.filter((row) => row.jurisdiction_id === andhraPradesh.id);
   const apFrameworkIds = new Set(apFrameworks.map((row) => row.id));
   const apRequirements = requirements.filter((row) => apFrameworkIds.has(row.framework_id));
-  assert.equal(apRequirements.length, 0, "Andhra Pradesh must not have destination graduation requirements");
+  assert.equal(
+    apRequirements.length,
+    0,
+    "Andhra Pradesh must not have destination graduation requirements",
+  );
 });
 
 test("Andhra Pradesh jurisdiction identity fields have provenance", () => {
@@ -280,5 +384,8 @@ test("Andhra Pradesh curricula have provenance for name", () => {
 
 test("Andhra Pradesh has at least two data sources", () => {
   const apSources = sources.filter((row) => row.jurisdiction_id === andhraPradesh.id);
-  assert.ok(apSources.length >= 2, `Expected at least 2 Andhra Pradesh data sources; found ${apSources.length}`);
+  assert.ok(
+    apSources.length >= 2,
+    `Expected at least 2 Andhra Pradesh data sources; found ${apSources.length}`,
+  );
 });

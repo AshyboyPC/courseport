@@ -115,9 +115,7 @@ test("Texas framework is scoped to Texas and does not fall back to Georgia", () 
 test("Texas requirements remain attached only to Texas's framework", () => {
   const texasFramework = frameworks.find((row) => row.jurisdiction_id === texas.id);
   assert.ok(texasFramework);
-  const texasRequirements = requirements.filter(
-    (row) => row.framework_id === texasFramework.id,
-  );
+  const texasRequirements = requirements.filter((row) => row.framework_id === texasFramework.id);
   assert.equal(texasRequirements.length, 11);
   assert.equal(
     texasRequirements.reduce((sum, row) => sum + Number(row.credits_required || 0), 0),
@@ -125,7 +123,9 @@ test("Texas requirements remain attached only to Texas's framework", () => {
   );
   assert.ok(texasRequirements.some((row) => row.requirement_kind === "assessment"));
   assert.ok(texasRequirements.some((row) => row.requirement_kind === "non_course"));
-  assert.ok(texasRequirements.some((row) => row.subject_category === "Endorsement/Advanced Credits"));
+  assert.ok(
+    texasRequirements.some((row) => row.subject_category === "Endorsement/Advanced Credits"),
+  );
   assert.equal(texasFramework.total_credits_required, "26");
 });
 

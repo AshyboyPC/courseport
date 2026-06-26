@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { PassportShell, StatusPill } from "@/components/PassportShell";
 import { useAuth } from "@/components/AuthProvider";
 import { upsertCurrentProfile, type StudentProfileInput } from "@/lib/scholaport-api";
+import { getMvpProfileUnsupportedReasons } from "@/lib/mvp-reference-scope";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile & Settings · Scholaport" }] }),
@@ -45,11 +46,13 @@ function ProfilePage() {
       expected_graduation_year: profile.expected_graduation_year,
       preferred_language: profile.preferred_language,
       source_country_id: profile.source_country_id,
+      source_jurisdiction_id: profile.source_jurisdiction_id,
       source_curriculum_id: profile.source_curriculum_id,
       destination_country_id: profile.destination_country_id,
       destination_jurisdiction_id: profile.destination_jurisdiction_id,
       destination_framework_id: profile.destination_framework_id,
       destination_program_id: profile.destination_program_id,
+      source_jurisdiction_label: profile.source_jurisdiction_label,
       destination_country_label: profile.destination_country_label,
       destination_jurisdiction_label: profile.destination_jurisdiction_label,
       destination_framework_label: profile.destination_framework_label,
@@ -63,6 +66,7 @@ function ProfilePage() {
   const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
   const initials =
     `${profile.first_name.charAt(0)}${profile.last_name?.charAt(0) ?? ""}`.toUpperCase();
+  const unsupportedProfileReasons = getMvpProfileUnsupportedReasons(profile);
 
   const update = <K extends keyof StudentProfileInput>(key: K, value: StudentProfileInput[K]) => {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -144,13 +148,19 @@ function ProfilePage() {
             <Field
               label="Origin country"
               value={form.origin_country}
-              editing={editing}
+              editing={false}
               onChange={(value) => update("origin_country", value)}
+            />
+            <Field
+              label="Source state"
+              value={form.source_jurisdiction_label ?? ""}
+              editing={false}
+              onChange={(value) => update("source_jurisdiction_label", value || null)}
             />
             <Field
               label="Source curriculum"
               value={form.source_curriculum}
-              editing={editing}
+              editing={false}
               onChange={(value) => update("source_curriculum", value)}
             />
             <Field
@@ -163,7 +173,7 @@ function ProfilePage() {
             <Field
               label="Target state"
               value={form.target_state}
-              editing={editing}
+              editing={false}
               onChange={(value) => update("target_state", value)}
             />
             <Field
@@ -192,6 +202,26 @@ function ProfilePage() {
               type="number"
             />
           </div>
+          <p className="mt-4 rounded-2xl border border-[#CDD3DE]/70 bg-[#F6F8FB] p-4 text-xs leading-5 text-[#5A6380]">
+            Academic route fields are managed through onboarding so the current MVP only uses India
+            → Tamil Nadu/Andhra Pradesh and United States → Georgia/Texas reference rows.
+          </p>
+          {unsupportedProfileReasons.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-[#F86746]/20 bg-[#F86746]/[0.06] p-4 text-xs leading-5 text-[#5A6380]">
+              <p className="font-bold text-[#0A175A]">This profile is outside the MVP scope.</p>
+              <ul className="mt-2 list-disc space-y-1 pl-4">
+                {unsupportedProfileReasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              <Link
+                to="/onboarding"
+                className="mt-3 inline-flex h-9 items-center rounded-xl border border-[#CDD3DE] bg-white px-3 text-xs font-bold text-[#0A175A]"
+              >
+                Reselect MVP route
+              </Link>
+            </div>
+          )}
         </section>
 
         <aside className="space-y-5">
@@ -206,7 +236,7 @@ function ProfilePage() {
             <div className="mt-5 space-y-4">
               <RouteItem
                 title={`${profile.source_curriculum} · ${profile.origin_country}`}
-                detail="Origin curriculum"
+                detail={profile.source_jurisdiction_label ?? "Source state not selected"}
               />
               <span className="ml-5 block h-5 w-px bg-white/15" />
               <RouteItem

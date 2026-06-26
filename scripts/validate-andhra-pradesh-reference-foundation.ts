@@ -106,7 +106,9 @@ if (!andhraPradesh) {
   errors.push("Andhra Pradesh jurisdiction row is missing.");
 } else {
   if (andhraPradesh.coverage_status !== "partial") {
-    errors.push(`Andhra Pradesh coverage_status must be partial; found ${andhraPradesh.coverage_status}.`);
+    errors.push(
+      `Andhra Pradesh coverage_status must be partial; found ${andhraPradesh.coverage_status}.`,
+    );
   }
   if (andhraPradesh.is_selectable_for_planning !== "true") {
     errors.push("Andhra Pradesh must be selectable for planning.");
@@ -115,7 +117,9 @@ if (!andhraPradesh) {
     errors.push("Andhra Pradesh identity_verification_status must be verified.");
   }
   if (andhraPradesh.detail_coverage_status !== "partial") {
-    errors.push(`Andhra Pradesh detail_coverage_status must be partial; found ${andhraPradesh.detail_coverage_status}.`);
+    errors.push(
+      `Andhra Pradesh detail_coverage_status must be partial; found ${andhraPradesh.detail_coverage_status}.`,
+    );
   }
   const url = parseUrl(andhraPradesh.website_url);
   if (!url || !["https:", "http:"].includes(url.protocol)) {
@@ -123,7 +127,13 @@ if (!andhraPradesh) {
   }
 
   // Identity field provenance
-  const identityFields = ["name", "jurisdiction_type", "code", "education_authority_name", "website_url"];
+  const identityFields = [
+    "name",
+    "jurisdiction_type",
+    "code",
+    "education_authority_name",
+    "website_url",
+  ];
   for (const field of identityFields) {
     if (!andhraPradesh[field]) {
       errors.push(`Andhra Pradesh missing identity field ${field}.`);
@@ -154,7 +164,9 @@ if (!andhraPradesh) {
 // Andhra Pradesh curricula checks
 const apCurricula = curricula.filter((row) => row.jurisdiction_id === andhraPradesh?.id);
 if (apCurricula.length < 2) {
-  errors.push(`Expected at least 2 Andhra Pradesh curricula (SSC and Intermediate); found ${apCurricula.length}.`);
+  errors.push(
+    `Expected at least 2 Andhra Pradesh curricula (SSC and Intermediate); found ${apCurricula.length}.`,
+  );
 } else {
   const ssc = apCurricula.find((row) => row.name.includes("SSC"));
   const intermediate = apCurricula.find((row) => row.name.includes("Intermediate"));
@@ -177,20 +189,26 @@ if (apCurricula.length < 2) {
 const apCurriculumIds = new Set(apCurricula.map((row) => row.id));
 const apCourses = courses.filter((row) => apCurriculumIds.has(row.curriculum_id));
 if (apCourses.length < 14) {
-  errors.push(`Expected at least 14 Andhra Pradesh curriculum courses (7 SSC × 2 grades + 7+ Intermediate × 2 grades); found ${apCourses.length}.`);
+  errors.push(
+    `Expected at least 14 Andhra Pradesh curriculum courses (7 SSC × 2 grades + 7+ Intermediate × 2 grades); found ${apCourses.length}.`,
+  );
 }
 
 // Ensure no US-style graduation frameworks exist for Andhra Pradesh
 const apFrameworks = frameworks.filter((row) => row.jurisdiction_id === andhraPradesh?.id);
 if (apFrameworks.length > 0) {
-  errors.push(`Andhra Pradesh must not have destination graduation frameworks; found ${apFrameworks.length}.`);
+  errors.push(
+    `Andhra Pradesh must not have destination graduation frameworks; found ${apFrameworks.length}.`,
+  );
 }
 
 // Ensure no US-style graduation requirements exist for Andhra Pradesh
 const apFrameworkIds = new Set(apFrameworks.map((row) => row.id));
 const apRequirements = requirements.filter((row) => apFrameworkIds.has(row.framework_id));
 if (apRequirements.length > 0) {
-  errors.push(`Andhra Pradesh must not have destination graduation requirements; found ${apRequirements.length}.`);
+  errors.push(
+    `Andhra Pradesh must not have destination graduation requirements; found ${apRequirements.length}.`,
+  );
 }
 
 // Data source checks for Andhra Pradesh

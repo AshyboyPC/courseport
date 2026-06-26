@@ -23,6 +23,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import { ScholaportLogo } from "@/components/ScholaportLogo";
+import { getMvpProfileUnsupportedReasons } from "@/lib/mvp-reference-scope";
 
 function NotFoundComponent() {
   return (
@@ -148,6 +149,10 @@ function AuthGate() {
   const navigate = useNavigate();
   const isLogin = location.pathname === "/login";
   const isOnboarding = location.pathname === "/onboarding";
+  const isProfile = location.pathname === "/profile";
+  const profileUnsupportedForMvp = profile
+    ? getMvpProfileUnsupportedReasons(profile).length > 0
+    : false;
 
   useEffect(() => {
     if (!configured || loading || error) return;
@@ -159,10 +164,25 @@ function AuthGate() {
       void navigate({ to: "/onboarding", replace: true });
       return;
     }
-    if (user && profile && (isLogin || isOnboarding)) {
+    if (user && profile && profileUnsupportedForMvp && !isOnboarding && !isProfile) {
+      void navigate({ to: "/onboarding", replace: true });
+      return;
+    }
+    if (user && profile && !profileUnsupportedForMvp && (isLogin || isOnboarding)) {
       void navigate({ to: "/", replace: true });
     }
-  }, [configured, loading, error, user, profile, isLogin, isOnboarding, navigate]);
+  }, [
+    configured,
+    loading,
+    error,
+    user,
+    profile,
+    profileUnsupportedForMvp,
+    isLogin,
+    isOnboarding,
+    isProfile,
+    navigate,
+  ]);
 
   if (!configured) {
     return (
@@ -184,7 +204,8 @@ function AuthGate() {
   if (
     (!user && !isLogin) ||
     (user && !profile && !isOnboarding) ||
-    (user && profile && (isLogin || isOnboarding))
+    (user && profile && profileUnsupportedForMvp && !isOnboarding && !isProfile) ||
+    (user && profile && !profileUnsupportedForMvp && (isLogin || isOnboarding))
   ) {
     return (
       <FullPageStatus title="Taking you to the right place…" description="Your session is ready." />

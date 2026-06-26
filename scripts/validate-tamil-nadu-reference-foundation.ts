@@ -123,7 +123,9 @@ if (!tamilNadu) {
     errors.push("Tamil Nadu identity_verification_status must be verified.");
   }
   if (tamilNadu.detail_coverage_status !== "partial") {
-    errors.push(`Tamil Nadu detail_coverage_status must be partial; found ${tamilNadu.detail_coverage_status}.`);
+    errors.push(
+      `Tamil Nadu detail_coverage_status must be partial; found ${tamilNadu.detail_coverage_status}.`,
+    );
   }
   const url = parseUrl(tamilNadu.website_url);
   if (!url || !["https:", "http:"].includes(url.protocol)) {
@@ -131,7 +133,13 @@ if (!tamilNadu) {
   }
 
   // Identity field provenance
-  const identityFields = ["name", "jurisdiction_type", "code", "education_authority_name", "website_url"];
+  const identityFields = [
+    "name",
+    "jurisdiction_type",
+    "code",
+    "education_authority_name",
+    "website_url",
+  ];
   for (const field of identityFields) {
     if (!tamilNadu[field]) {
       errors.push(`Tamil Nadu missing identity field ${field}.`);
@@ -162,7 +170,9 @@ if (!tamilNadu) {
 // Tamil Nadu curricula checks
 const tnCurricula = curricula.filter((row) => row.jurisdiction_id === tamilNadu?.id);
 if (tnCurricula.length < 2) {
-  errors.push(`Expected at least 2 Tamil Nadu curricula (SSLC and HSC); found ${tnCurricula.length}.`);
+  errors.push(
+    `Expected at least 2 Tamil Nadu curricula (SSLC and HSC); found ${tnCurricula.length}.`,
+  );
 } else {
   const sslc = tnCurricula.find((row) => row.name.includes("SSLC"));
   const hsc = tnCurricula.find((row) => row.name.includes("HSC"));
@@ -191,14 +201,18 @@ if (tnCourses.length < 80) {
 // Ensure no US-style graduation frameworks exist for Tamil Nadu
 const tnFrameworks = frameworks.filter((row) => row.jurisdiction_id === tamilNadu?.id);
 if (tnFrameworks.length > 0) {
-  errors.push(`Tamil Nadu must not have destination graduation frameworks; found ${tnFrameworks.length}.`);
+  errors.push(
+    `Tamil Nadu must not have destination graduation frameworks; found ${tnFrameworks.length}.`,
+  );
 }
 
 // Ensure no US-style graduation requirements exist for Tamil Nadu
 const tnFrameworkIds = new Set(tnFrameworks.map((row) => row.id));
 const tnRequirements = requirements.filter((row) => tnFrameworkIds.has(row.framework_id));
 if (tnRequirements.length > 0) {
-  errors.push(`Tamil Nadu must not have destination graduation requirements; found ${tnRequirements.length}.`);
+  errors.push(
+    `Tamil Nadu must not have destination graduation requirements; found ${tnRequirements.length}.`,
+  );
 }
 
 // Data source checks for Tamil Nadu

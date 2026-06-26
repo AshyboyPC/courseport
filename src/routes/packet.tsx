@@ -1,38 +1,44 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Check,
+  ArrowRight,
+  ClipboardList,
   Download,
-  Eye,
-  FileCheck2,
   FileText,
-  LockKeyhole,
+  Loader2,
   Printer,
   RefreshCw,
-  Share2,
-  Sparkles,
+  ShieldAlert,
 } from "lucide-react";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ScholaportLogo } from "@/components/ScholaportLogo";
 import { PassportShell, StatusPill } from "@/components/PassportShell";
 import {
-  getCreditMappings,
-  getGapAnalysis,
-  getPassportSummary,
-  getTranscriptCourses,
+  generateCounselorPacket,
+  getCounselorPacketDownloadUrl,
+  getLatestCounselorPacket,
+  regenerateCounselorPacket,
+  type CounselorPacketPayload,
 } from "@/lib/scholaport-api";
 
-const sections = [
-  "Student summary",
-  "Original transcript",
-  "Translated course list",
-  "Probable credit map",
-  "Graduation gap checklist",
-  "Counselor questions",
-  "Academic roadmap",
-  "PathMatch insight",
-];
+type PacketSectionSnapshot = {
+  key: string;
+  title: string;
+  order: number;
+  status: string;
+  data: unknown;
+  missingReason?: string | null;
+  warnings?: string[];
+};
+
+type PacketSnapshot = {
+  title?: string;
+  generatedAt?: string;
+  disclaimerText?: string;
+  summaryText?: string;
+  sections?: PacketSectionSnapshot[];
+  warnings?: string[];
+  counselorQuestions?: string[];
+};
 
 export const Route = createFileRoute("/packet")({
   head: () => ({ meta: [{ title: "Counselor Packet · Scholaport" }] }),
@@ -40,247 +46,411 @@ export const Route = createFileRoute("/packet")({
 });
 
 function PacketPage() {
-  const passport = useQuery({ queryKey: ["passport-summary"], queryFn: getPassportSummary });
-  const courses = useQuery({ queryKey: ["transcript-courses"], queryFn: getTranscriptCourses });
-  const mappings = useQuery({ queryKey: ["credit-mappings"], queryFn: getCreditMappings });
-  const gaps = useQuery({ queryKey: ["gap-analysis"], queryFn: getGapAnalysis });
-  const student = passport.data?.profile;
-  const [included, setIncluded] = useState(sections);
-  const toggle = (section: string) =>
-    setIncluded((items) =>
-      items.includes(section) ? items.filter((item) => item !== section) : [...items, section],
-    );
-  const download = () => {
-    toast.success("Opening a print-ready counselor packet.");
-    window.setTimeout(() => window.print(), 350);
-  };
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: ["counselor-packet"], queryFn: getLatestCounselorPacket });
+  const generateMutation = useMutation({
+    mutationFn: (regenerate: boolean) => {
+      const transcriptId = query.data?.transcript?.id;
+      const gapAnalysisId = query.data?.gapAnalysis?.id;
+      const roadmapId = query.data?.roadmap?.id;
+      return regenerate
+        ? regenerateCounselorPacket({ transcriptId, gapAnalysisId, roadmapId })
+        : generateCounselorPacket({ transcriptId, gapAnalysisId, roadmapId });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["counselor-packet"] });
+      await queryClient.invalidateQueries({ queryKey: ["passport-summary"] });
+    },
+  });
+
+  async function runPacket(regenerate = false) {
+    try {
+      await generateMutation.mutateAsync(regenerate);
+      toast.success(regenerate ? "Counselor packet regenerated." : "Counselor packet generated.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to generate packet.");
+    }
+  }
+
+  const blocked = query.data ? getBlockedState(query.data) : null;
+
   return (
     <PassportShell
       eyebrow="Counselor-ready packet"
-      title="Walk into the meeting prepared."
-      description="A clear, professional preview of your transcript translation, probable credits, gaps, and questions—built to start a productive official review."
-      action={
-        <button
-          onClick={download}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#01C3AD] px-4 text-sm font-bold text-[#060F3D]"
-        >
-          <Download className="h-4 w-4" /> Print packet
-        </button>
-      }
+      title="A printable counselor preview from your saved Scholaport workflow."
+      description="This packet summarizes saved profile, transcript, mapping, gap, and roadmap records. Final decisions are made by the school or counselor."
     >
-      <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="space-y-5">
-          <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white p-5 shadow-card">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Packet contents</h2>
-              <span className="text-xs font-black text-[#019A8A]">{included.length}/8</span>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-[#5A6380]">
-              Choose what your counselor needs. Original documents remain unchanged.
-            </p>
-            <div className="mt-5 space-y-1">
-              {sections.map((section) => (
-                <button
-                  key={section}
-                  onClick={() => toggle(section)}
-                  className="flex h-10 w-full items-center gap-3 rounded-xl px-2 text-left text-xs font-semibold transition hover:bg-[#F6F8FB]"
-                >
-                  <span
-                    className={`grid h-5 w-5 place-items-center rounded-md border ${included.includes(section) ? "border-[#01C3AD] bg-[#01C3AD] text-[#060F3D]" : "border-[#CDD3DE]"}`}
-                  >
-                    {included.includes(section) && <Check className="h-3.5 w-3.5" />}
-                  </span>
-                  {section}
-                </button>
-              ))}
-            </div>
-          </section>
-          <section className="rounded-[20px] bg-[#0A175A] p-5 text-white">
-            <div className="flex gap-3">
-              <LockKeyhole className="h-5 w-5 shrink-0 text-[#01C3AD]" />
-              <div>
-                <h3 className="text-sm font-bold">You control this file</h3>
-                <p className="mt-1 text-[10px] leading-4 text-white/50">
-                  Scholaport never sends your packet to a school automatically. Download or share it
-                  only when you choose.
-                </p>
-              </div>
-            </div>
-          </section>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={download}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0A175A] text-xs font-bold text-white"
-            >
-              <Printer className="h-4 w-4" /> Print
-            </button>
-            <button
-              disabled
-              title="Secure sharing is not implemented yet"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#CDD3DE] bg-white text-xs font-bold opacity-50"
-            >
-              <Share2 className="h-4 w-4" /> Share link
-            </button>
-          </div>
-        </aside>
-
-        <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-[#E8EBF0] p-3 shadow-card sm:p-6">
-          <div className="mb-4 flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-[#5A6380]" />
-              <span className="text-xs font-bold text-[#5A6380]">Live preview</span>
-            </div>
-            <StatusPill tone="teal">
-              <Sparkles className="mr-1 h-3 w-3" /> Ready
-            </StatusPill>
-          </div>
-          <div className="mx-auto min-h-[900px] max-w-[760px] bg-white p-7 shadow-[0_14px_40px_rgba(10,23,90,.14)] sm:p-10 print:max-w-none print:shadow-none">
-            <header className="flex items-start justify-between gap-6 border-b-4 border-[#0A175A] pb-7">
-              <div>
-                <ScholaportLogo className="h-12" showWordmark />
-                <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#019A8A]">
-                  Academic transfer review packet
-                </p>
-                <h1 className="mt-2 font-display text-3xl font-black tracking-[-0.05em]">
-                  {student
-                    ? `${student.first_name} ${student.last_name ?? ""}`.trim()
-                    : "Loading student"}
-                </h1>
-                <p className="mt-2 text-sm text-[#5A6380]">
-                  {student
-                    ? `${student.source_curriculum}, ${student.origin_country} → ${student.target_state}`
-                    : ""}
-                </p>
-              </div>
-              <div className="rounded-2xl border-2 border-dashed border-[#01C3AD]/40 p-4 text-center text-[#019A8A]">
-                <FileCheck2 className="mx-auto h-6 w-6" />
-                <p className="mt-2 text-[8px] font-black uppercase tracking-widest">
-                  Counselor preview
-                </p>
-                <p className="mt-1 text-xs font-black">19 JUN 2026</p>
-              </div>
-            </header>
-            {included.includes("Student summary") && (
-              <PacketSection number="01" title="Student summary">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <PacketDetail
-                    label="Current grade"
-                    value={student ? `Grade ${student.grade_at_transfer}` : "Not recorded"}
-                  />
-                  <PacketDetail
-                    label="Target school"
-                    value={student?.target_school ?? "Not recorded"}
-                  />
-                  <PacketDetail
-                    label="Graduation goal"
-                    value={
-                      student?.expected_graduation_year
-                        ? String(student.expected_graduation_year)
-                        : "Not recorded"
-                    }
-                  />
-                </div>
-                <p className="mt-4 rounded-xl bg-[#01C3AD]/[0.07] p-4 text-xs leading-5 text-[#5A6380]">
-                  This packet includes only authenticated records currently stored in this student’s
-                  Academic Passport. Official decisions must be made by the receiving school.
-                </p>
-              </PacketSection>
-            )}
-            {included.includes("Probable credit map") && (
-              <PacketSection number="02" title="Probable credit map">
-                <div className="overflow-hidden rounded-xl border border-[#CDD3DE]">
-                  <div className="grid grid-cols-[1.3fr_1.2fr_auto] bg-[#0A175A] px-3 py-2 text-[9px] font-bold uppercase tracking-wide text-white">
-                    <span>Source course</span>
-                    <span>Probable equivalent</span>
-                    <span>Credit</span>
-                  </div>
-                  {(courses.data ?? []).slice(0, 6).map((course) => {
-                    const mapping = (mappings.data ?? []).find(
-                      (item) => item.transcript_course_id === course.id,
-                    );
-                    return (
-                      <div
-                        key={course.id}
-                        className="grid grid-cols-[1.3fr_1.2fr_auto] gap-2 border-t border-[#E8EBF0] px-3 py-2.5 text-[10px]"
-                      >
-                        <span className="font-semibold">{course.course_name_original}</span>
-                        <span>{mapping?.probable_us_equivalent ?? "Not mapped"}</span>
-                        <span className="font-black">{mapping?.credits_mapped ?? "—"}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </PacketSection>
-            )}
-            {included.includes("Graduation gap checklist") && (
-              <PacketSection number="03" title="Graduation gap checklist">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {(gaps.data?.requirements ?? []).map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between rounded-lg border border-[#E8EBF0] p-2.5 text-[10px]"
-                    >
-                      <span className="font-semibold">{item.subject_category}</span>
-                      <span
-                        className={
-                          item.credits_remaining <= 0
-                            ? "font-black text-[#019A8A]"
-                            : "font-black text-[#F86746]"
-                        }
-                      >
-                        {item.credits_mapped}/{item.credits_required}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </PacketSection>
-            )}
-            {included.includes("Counselor questions") && (
-              <PacketSection number="04" title="Questions for the counselor">
-                <ol className="space-y-2 text-xs leading-5 text-[#5A6380]">
-                  <li>1. Which mapped credits can be confirmed today?</li>
-                  <li>2. Which courses still require syllabi or supporting documents?</li>
-                  <li>3. Which remaining requirements should be scheduled first?</li>
-                </ol>
-              </PacketSection>
-            )}
-            <footer className="mt-10 flex items-center justify-between border-t border-[#CDD3DE] pt-4 text-[8px] text-[#9AA3B2]">
-              <span>{student ? `CP-${student.id.slice(0, 8).toUpperCase()}` : ""}</span>
-              <span>Educational preview · Not an official credential evaluation</span>
-            </footer>
-          </div>
-        </section>
-      </div>
+      {query.isLoading ? (
+        <State text="Loading saved packet data…" />
+      ) : query.error ? (
+        <State
+          error
+          text={query.error instanceof Error ? query.error.message : "Unable to load packet."}
+        />
+      ) : blocked ? (
+        <PrerequisiteState state={blocked} />
+      ) : !query.data?.packet ? (
+        <ActionState
+          title="Generate counselor packet"
+          body="Your saved transcript, mappings, gap analysis, and roadmap are ready to assemble into a packet preview."
+          button="Generate counselor packet"
+          processing={generateMutation.isPending}
+          onClick={() => void runPacket(false)}
+        />
+      ) : (
+        <PacketPreview
+          data={query.data}
+          processing={generateMutation.isPending}
+          onRegenerate={() => void runPacket(true)}
+        />
+      )}
     </PassportShell>
   );
 }
 
-function PacketSection({
-  number,
-  title,
-  children,
+function getBlockedState(data: CounselorPacketPayload) {
+  if (!data.profile) {
+    return {
+      title: "Complete onboarding first.",
+      body: "The packet needs a saved student profile and destination framework.",
+      action: "Start onboarding",
+      to: "/onboarding" as const,
+    };
+  }
+  if (!data.transcript) {
+    return {
+      title: "Upload and confirm your transcript first.",
+      body: "Counselor packets start with a confirmed transcript course list.",
+      action: "Go to transcript",
+      to: "/transcript" as const,
+    };
+  }
+  if (data.transcript.confirmation_status !== "confirmed" || !data.transcriptCourses.length) {
+    return {
+      title: "Review and confirm your extracted courses first.",
+      body: "Unconfirmed OCR or translation rows are not included as main packet courses.",
+      action: "Review transcript",
+      to: "/transcript" as const,
+    };
+  }
+  if (!data.creditMappings.length) {
+    return {
+      title: "Generate probable credit mapping first.",
+      body: "The packet needs saved probable mapping rows with confidence and review flags.",
+      action: "Open mapping review",
+      to: "/transcript" as const,
+    };
+  }
+  if (!data.gapAnalysis || !data.gapRequirements.length) {
+    return {
+      title: "Run graduation gap analysis first.",
+      body: "The packet needs saved gap summary and requirement checklist rows.",
+      action: "Open gap analysis",
+      to: "/gaps" as const,
+    };
+  }
+  if (!data.roadmap || !data.roadmapItems.length) {
+    return {
+      title: "Generate academic roadmap first.",
+      body: "The packet includes saved roadmap tasks and counselor meeting questions.",
+      action: "Open roadmap",
+      to: "/roadmap" as const,
+    };
+  }
+  return null;
+}
+
+function PacketPreview({
+  data,
+  processing,
+  onRegenerate,
 }: {
-  number: string;
-  title: string;
-  children: React.ReactNode;
+  data: CounselorPacketPayload;
+  processing: boolean;
+  onRegenerate: () => void;
 }) {
+  const packet = data.packet;
+  const snapshot = (packet?.packet_snapshot_json ?? {}) as PacketSnapshot;
+  const sections = snapshot.sections ?? [];
+  const stale = packet?.status === "stale";
+
+  async function downloadStoredFile() {
+    if (!packet) return;
+    try {
+      await getCounselorPacketDownloadUrl(packet.id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No packet download is available.");
+    }
+  }
+
+  async function copyQuestions() {
+    const text = (snapshot.counselorQuestions ?? []).join("\n");
+    if (!text) {
+      toast.error("No counselor questions were saved for this packet.");
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    toast.success("Counselor questions copied.");
+  }
+
   return (
-    <section className="mt-8">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#0A175A] text-[9px] font-black text-white">
-          {number}
+    <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="space-y-5">
+        {stale && (
+          <section className="rounded-[18px] border border-[#F0A33A] bg-[#FFF8ED] p-4 text-xs leading-5 text-[#8A4D00]">
+            This packet may be outdated because your transcript, credit map, gap analysis, roadmap,
+            or profile changed. Regenerate it before sharing it with a counselor.
+            {packet?.stale_reason ? ` Reason: ${packet.stale_reason}.` : ""}
+          </section>
+        )}
+        <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white p-5 shadow-card">
+          <h2 className="font-display text-lg font-bold">Packet status</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <StatusPill tone={packet?.status === "stale" ? "coral" : "teal"}>
+              {labelize(packet?.status ?? "not ready")}
+            </StatusPill>
+            {packet?.pdf_generation_error && <StatusPill tone="gray">Printable HTML</StatusPill>}
+          </div>
+          <p className="mt-3 text-xs leading-5 text-[#5A6380]">
+            Generated{" "}
+            {packet?.generated_at ? new Date(packet.generated_at).toLocaleString() : "recently"}.
+            Raw private storage paths are not shown here.
+          </p>
+          {packet?.pdf_generation_error && (
+            <p className="mt-3 rounded-xl bg-[#FFF8ED] p-3 text-xs leading-5 text-[#8A4D00]">
+              {packet.pdf_generation_error}
+            </p>
+          )}
+        </section>
+        <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white p-5 shadow-card">
+          <h2 className="font-display text-lg font-bold">Controls</h2>
+          <div className="mt-4 grid gap-2">
+            <button
+              onClick={() => window.print()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0A175A] text-xs font-bold text-white"
+            >
+              <Printer className="h-4 w-4" /> Print / Save as PDF
+            </button>
+            <button
+              disabled={processing}
+              onClick={onRegenerate}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#CDD3DE] bg-white text-xs font-bold text-[#0A175A] disabled:opacity-60"
+            >
+              {processing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Regenerate
+            </button>
+            <button
+              onClick={downloadStoredFile}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#CDD3DE] bg-white text-xs font-bold text-[#0A175A]"
+            >
+              <Download className="h-4 w-4" /> Download stored file
+            </button>
+            <button
+              onClick={() => void copyQuestions()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#CDD3DE] bg-white text-xs font-bold text-[#0A175A]"
+            >
+              <ClipboardList className="h-4 w-4" /> Copy questions
+            </button>
+          </div>
+        </section>
+        <section className="rounded-[20px] bg-[#0A175A] p-5 text-white">
+          <div className="flex gap-3">
+            <ShieldAlert className="h-5 w-5 shrink-0 text-[#01C3AD]" />
+            <p className="text-xs leading-5 text-white/70">
+              This packet is not sent to a school automatically. Share it only when you choose.
+            </p>
+          </div>
+        </section>
+      </aside>
+
+      <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-[#E8EBF0] p-3 shadow-card sm:p-6">
+        <div className="mx-auto min-h-[900px] max-w-[840px] bg-white p-7 shadow-[0_14px_40px_rgba(10,23,90,.14)] sm:p-10 print:max-w-none print:shadow-none">
+          <header className="border-b-4 border-[#0A175A] pb-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#019A8A]">
+              Scholaport preview
+            </p>
+            <h1 className="mt-2 font-display text-3xl font-black tracking-[-0.04em]">
+              {snapshot.title || packet?.title || "Counselor packet"}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-[#5A6380]">
+              {snapshot.summaryText || packet?.summary_text}
+            </p>
+            {snapshot.disclaimerText && (
+              <p className="mt-4 rounded-xl bg-[#FFF8ED] p-4 text-xs leading-5 text-[#8A4D00]">
+                {snapshot.disclaimerText}
+              </p>
+            )}
+          </header>
+          <div className="mt-7 space-y-7">
+            {sections.length ? (
+              sections.map((section) => <PacketSection key={section.key} section={section} />)
+            ) : (
+              <p className="rounded-xl bg-[#F6F8FB] p-4 text-sm text-[#5A6380]">
+                The saved packet record does not contain preview sections. Regenerate the packet.
+              </p>
+            )}
+          </div>
+          <footer className="mt-10 border-t border-[#CDD3DE] pt-4 text-[10px] leading-5 text-[#9AA3B2]">
+            Packet ID: {packet?.id}. This packet summarizes student-confirmed and system-generated
+            planning information.
+          </footer>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PacketSection({ section }: { section: PacketSectionSnapshot }) {
+  return (
+    <section className="break-inside-avoid">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#0A175A] text-[10px] font-black text-white">
+          {section.order}
         </span>
-        <h2 className="font-display text-base font-bold">{title}</h2>
+        <h2 className="font-display text-lg font-bold">{section.title}</h2>
+        <StatusPill
+          tone={
+            section.status === "included"
+              ? "teal"
+              : section.status === "needs_review"
+                ? "coral"
+                : "gray"
+          }
+        >
+          {labelize(section.status)}
+        </StatusPill>
       </div>
-      {children}
+      {section.missingReason ? (
+        <p className="rounded-xl bg-[#FFF8ED] p-4 text-xs leading-5 text-[#8A4D00]">
+          {section.missingReason}
+        </p>
+      ) : (
+        <ValueRenderer value={section.data} />
+      )}
+      {!!section.warnings?.length && (
+        <div className="mt-3 space-y-2">
+          {section.warnings.map((warning) => (
+            <p
+              key={warning}
+              className="rounded-xl bg-[#FFF8ED] p-3 text-xs leading-5 text-[#8A4D00]"
+            >
+              {warning}
+            </p>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
-function PacketDetail({ label, value }: { label: string; value: string }) {
+
+function ValueRenderer({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === "") {
+    return <span className="text-xs text-[#9AA3B2]">Not recorded</span>;
+  }
+  if (Array.isArray(value)) {
+    if (!value.length) return <span className="text-xs text-[#9AA3B2]">None recorded</span>;
+    return (
+      <div className="space-y-2">
+        {value.map((item, index) => (
+          <div key={index} className="rounded-xl border border-[#E8EBF0] p-3">
+            <ValueRenderer value={item} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (typeof value === "object") {
+    return (
+      <div className="grid gap-2 sm:grid-cols-2">
+        {Object.entries(value as Record<string, unknown>).map(([key, entry]) => (
+          <div key={key} className="rounded-xl border border-[#E8EBF0] p-3">
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#9AA3B2]">
+              {labelize(key)}
+            </p>
+            <div className="mt-1 text-xs leading-5 text-[#5A6380]">
+              <ValueRenderer value={entry} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <span>{String(value)}</span>;
+}
+
+function PrerequisiteState({
+  state,
+}: {
+  state: {
+    title: string;
+    body: string;
+    action: string;
+    to: "/onboarding" | "/transcript" | "/gaps" | "/roadmap";
+  };
+}) {
   return (
-    <div>
-      <p className="text-[8px] font-bold uppercase tracking-widest text-[#9AA3B2]">{label}</p>
-      <p className="mt-1 text-[10px] font-bold">{value}</p>
-    </div>
+    <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white p-8 text-center shadow-card">
+      <FileText className="mx-auto h-10 w-10 text-[#01C3AD]" />
+      <h2 className="mt-4 font-display text-xl font-bold">{state.title}</h2>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#5A6380]">{state.body}</p>
+      <Link
+        to={state.to}
+        className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0A175A] px-5 text-sm font-bold text-white"
+      >
+        {state.action} <ArrowRight className="h-4 w-4" />
+      </Link>
+    </section>
   );
+}
+
+function ActionState({
+  title,
+  body,
+  button,
+  processing,
+  onClick,
+}: {
+  title: string;
+  body: string;
+  button: string;
+  processing: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <section className="rounded-[24px] border border-[#CDD3DE]/70 bg-white p-8 text-center shadow-card">
+      <ShieldAlert className="mx-auto h-10 w-10 text-[#0A175A]" />
+      <h2 className="mt-4 font-display text-xl font-bold">{title}</h2>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#5A6380]">{body}</p>
+      <button
+        disabled={processing}
+        onClick={onClick}
+        className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#01C3AD] px-5 text-sm font-bold text-[#060F3D] disabled:opacity-60"
+      >
+        {processing ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <RefreshCw className="h-4 w-4" />
+        )}
+        {button}
+      </button>
+    </section>
+  );
+}
+
+function State({ text, error = false }: { text: string; error?: boolean }) {
+  return (
+    <section
+      className={`rounded-[24px] border p-8 text-center shadow-card ${error ? "border-[#F86746]/40 bg-[#F86746]/10 text-[#E65234]" : "border-[#CDD3DE]/70 bg-white text-[#5A6380]"}`}
+    >
+      <p className="text-sm font-bold">{text}</p>
+    </section>
+  );
+}
+
+function labelize(value: string) {
+  return value.replaceAll("_", " ");
 }

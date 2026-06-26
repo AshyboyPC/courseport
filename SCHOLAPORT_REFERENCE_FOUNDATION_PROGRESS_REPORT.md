@@ -5,6 +5,85 @@
 **Starting point:** The global reference-data foundation follow-up prompt supplied by the user  
 **Current scope:** Database structure, reference-data research workflow, CSV seed package, validation, onboarding integration, coverage visibility, and country-by-country verification
 
+## June 25, 2026 update: Transcript OCR + translation review layer
+
+Scholaport now includes the first real transcript-processing layer:
+
+- private transcript upload from `/transcript`;
+- server-only OCR provider chain for Google Document AI first and Azure Document Intelligence second;
+- server-only translation provider chain for Gemini and OpenAI;
+- mock OCR/translation providers retained for tests/local fixtures only, not for the production `/api/v1/transcripts` processing path;
+- deterministic language detection with provider-first and script fallback behavior;
+- Tamil, Hindi, Spanish, Arabic, Urdu, Mandarin, Filipino, Bengali, Russian, Ukrainian, English, and ambiguous-script review handling;
+- original OCR text and English academic translation stored separately;
+- deterministic transcript table parsing into candidate rows;
+- source framework matching against onboarding profile data;
+- mismatch review actions;
+- manual-entry fallback when live OCR/translation is unavailable or fails;
+- confirmation gate that copies reviewed candidates into `transcript_courses` only after student confirmation; and
+- tests covering provider selection, Tamil/Spanish translation, language fallback, parser behavior, mismatch detection, RLS, and frontend key hygiene.
+
+New implementation docs:
+
+- `OCR_TRANSCRIPT_PROCESSING.md`
+- `TRANSLATION_TRANSCRIPT_REVIEW.md`
+
+New migration:
+
+- `supabase/migrations/202606250001_transcript_ocr_translation_review.sql`
+
+This layer still does not perform official credit conversion, U.S. grade conversion, equivalency decisions, gap analysis, Pori decisions, or counselor packet finalization. It prepares confirmed transcript evidence for those future workflows.
+
+## June 25, 2026 update: Probable credit mapping engine
+
+Scholaport now includes a first credit-mapping layer after transcript confirmation:
+
+- confirmed `transcript_courses` are the only mapping input;
+- the server verifies transcript ownership before mapping;
+- probable mapping candidates are saved in `credit_mappings`;
+- mapping attempts are grouped in `credit_mapping_runs`;
+- verified `mapping_rules` are preferred when available;
+- exact reference category matching and deterministic multilingual taxonomy run before AI;
+- vector similarity has a safe pgvector-ready hook and skips when embeddings are unavailable;
+- structured AI mapping is server-only and schema-validated when `OPENAI_API_KEY` or `GEMINI_API_KEY` is configured;
+- low/unclear or state-specific mappings require counselor review;
+- the `/transcript` UI now shows probable mapping results, confidence badges, edit/confirm/reject actions, and counselor-review controls.
+
+This layer still does not run gap analysis, generate a roadmap, produce counselor packets, convert marks into GPA, or claim official transfer approval. It stores enough evidence for the future gap-analysis engine to compare probable mapped credit against destination requirements.
+
+New implementation doc:
+
+- `CREDIT_MAPPING_ENGINE.md`
+
+New migration:
+
+- `supabase/migrations/202606250002_credit_mapping_engine.sql`
+
+## June 25, 2026 update: Graduation gap analysis engine
+
+Scholaport now includes Feature 3, the deterministic graduation gap detector:
+
+- confirmed transcript courses and persisted credit mappings are required before analysis;
+- the selected destination framework and graduation requirements are loaded from Supabase;
+- mappings are aggregated by destination requirement ID first, then by mapped subject bucket;
+- high-confidence/no-review mappings count as likely earned;
+- medium mappings count as possible/partial;
+- low, unclear, rejected, and review-required mappings do not fully satisfy requirements;
+- state-specific requirements such as U.S. History, Government, Texas STAAR/EOC, Georgia EOC, Health, and PE are protected from generic foreign coursework;
+- one `gap_analyses` row and one `gap_requirements` row per requirement are persisted;
+- stale-analysis triggers mark old gap analyses stale when mappings or confirmed courses change;
+- `/gaps` now shows prerequisite states, run/regenerate controls, dashboard summary, risk badges, requirement cards, missing/review sections, and counselor questions.
+
+This layer still does not generate the roadmap, counselor packet, Pori/RAG advisor response, PathMatch, Twin Connect, or official graduation eligibility.
+
+New implementation doc:
+
+- `GAP_ANALYSIS_ENGINE.md`
+
+New migration:
+
+- `supabase/migrations/202606250003_graduation_gap_analysis_engine.sql`
+
 ## Important note about this report
 
 This report was reconstructed from:
@@ -97,18 +176,18 @@ The migration creates these ten tables:
 
 ### What those tables mean in simple language
 
-| Table | Purpose |
-|---|---|
-| `countries` | The 20 priority countries and their source/destination rankings. |
-| `jurisdictions` | States, provinces, territories, regions, boards, districts, and similar local authorities. |
-| `curricula` | National, regional, state-board, exam-board, vocational, or advanced curriculum systems. |
-| `curriculum_courses` | Courses or official subject labels belonging to a curriculum. |
-| `destination_graduation_frameworks` | A destination jurisdiction's credential or graduation structure. |
-| `graduation_requirements` | Subject, credit, examination, language, or local requirements inside a framework. |
-| `education_programs` | Programs such as vocational pathways, dual enrollment, or advanced programs when directly supported. |
-| `mapping_rules` | Future source-to-destination equivalency rules. This is intentionally empty today. |
-| `data_sources` | Official documents, ministry pages, regulations, PDFs, APIs, or reviewed sources. |
-| `reference_record_sources` | Field-level links connecting a database record to its supporting source. |
+| Table                               | Purpose                                                                                              |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `countries`                         | The 20 priority countries and their source/destination rankings.                                     |
+| `jurisdictions`                     | States, provinces, territories, regions, boards, districts, and similar local authorities.           |
+| `curricula`                         | National, regional, state-board, exam-board, vocational, or advanced curriculum systems.             |
+| `curriculum_courses`                | Courses or official subject labels belonging to a curriculum.                                        |
+| `destination_graduation_frameworks` | A destination jurisdiction's credential or graduation structure.                                     |
+| `graduation_requirements`           | Subject, credit, examination, language, or local requirements inside a framework.                    |
+| `education_programs`                | Programs such as vocational pathways, dual enrollment, or advanced programs when directly supported. |
+| `mapping_rules`                     | Future source-to-destination equivalency rules. This is intentionally empty today.                   |
+| `data_sources`                      | Official documents, ministry pages, regulations, PDFs, APIs, or reviewed sources.                    |
+| `reference_record_sources`          | Field-level links connecting a database record to its supporting source.                             |
 
 ### Student profile connections
 
@@ -236,18 +315,18 @@ The current import package lives under `supabase/seeds/`:
 
 As of the final read-only snapshot for this report:
 
-| Table | Rows accepted | Rejected |
-|---|---:|---:|
-| Countries | 20 | 0 |
-| Jurisdictions | 123 | 0 |
-| Data sources | 128 | 0 |
-| Curricula | 49 | 0 |
-| Curriculum courses | 173 | 0 |
-| Destination graduation frameworks | 10 | 0 |
-| Graduation requirements | 19 | 0 |
-| Education programs | 11 | 0 |
-| Mapping rules | 0 | 0 |
-| Provenance links | 742 | 0 |
+| Table                             | Rows accepted | Rejected |
+| --------------------------------- | ------------: | -------: |
+| Countries                         |            20 |        0 |
+| Jurisdictions                     |           123 |        0 |
+| Data sources                      |           128 |        0 |
+| Curricula                         |            49 |        0 |
+| Curriculum courses                |           173 |        0 |
+| Destination graduation frameworks |            10 |        0 |
+| Graduation requirements           |            19 |        0 |
+| Education programs                |            11 |        0 |
+| Mapping rules                     |             0 |        0 |
+| Provenance links                  |           742 |        0 |
 
 These counts reflect the completed Tamil Nadu, Andhra Pradesh, and Texas destination repairs. Older research reports may contain earlier snapshots.
 
@@ -532,20 +611,20 @@ For example, `RESEARCH_AUDIT.md` still describes the earlier nine-row China vers
 
 ### Current status overview
 
-| Country | Status | Supported claims | Errors | Practical meaning |
-|---|---|---:|---:|---|
-| United States | Complete for current scope | 58 | 0 | National decentralization plus Georgia and Texas detail are sourced. |
-| India | Complete for current scope | 86 | 0 | Tamil Nadu SSLC/HSC and Andhra Pradesh SSC/Intermediate are sourced; broader boards remain gaps. |
-| Canada | Complete for current scope | 14 | 0 | National decentralization and Ontario-scoped records are sourced. |
-| Australia | Complete for current scope | 21 | 0 | NSW, Victoria, and scoped program records are sourced. |
-| United Kingdom | Complete for current scope | 11 | 0 | Devolved structure and narrowed England/Scotland curriculum records are sourced. |
-| Germany | Complete for current scope | 3 | 0 | Country/KMK coordination is sourced; Länder details remain research placeholders. |
-| China | Complete for current scope | 36 | 0 | Three national curriculum programs and 13 subject labels/translations are sourced. |
-| Mexico | Complete for current scope | 14 | 0 | National legal/curriculum records are directly sourced; local implementation detail remains a research gap. |
-| Philippines | Complete for current scope | 8 | 0 | Incoming Grade 11 Academic/TechPro transition scope is sourced; broader JHS, Grade 12, credential, assessment, and TESDA detail remains research work. |
-| Pakistan | Complete for current scope | 8 | 0 | Two FBISE scheme rows are limited to affiliated institutions and the 2025/2026 transition; provincial and other-board systems remain gaps. |
-| Saudi Arabia | Complete for current scope | 3 | 0 | Secondary pathways system is sourced; broader curriculum, examination, and recognition detail remain research gaps. |
-| United Arab Emirates | Complete for current scope | 0 | 0 | No directly sourced detailed curriculum, framework, or requirement rows retained; country and emirate jurisdictions preserved as honest placeholders with documented research gaps. |
+| Country              | Status                     | Supported claims | Errors | Practical meaning                                                                                                                                                                   |
+| -------------------- | -------------------------- | ---------------: | -----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| United States        | Complete for current scope |               58 |      0 | National decentralization plus Georgia and Texas detail are sourced.                                                                                                                |
+| India                | Complete for current scope |               86 |      0 | Tamil Nadu SSLC/HSC and Andhra Pradesh SSC/Intermediate are sourced; broader boards remain gaps.                                                                                    |
+| Canada               | Complete for current scope |               14 |      0 | National decentralization and Ontario-scoped records are sourced.                                                                                                                   |
+| Australia            | Complete for current scope |               21 |      0 | NSW, Victoria, and scoped program records are sourced.                                                                                                                              |
+| United Kingdom       | Complete for current scope |               11 |      0 | Devolved structure and narrowed England/Scotland curriculum records are sourced.                                                                                                    |
+| Germany              | Complete for current scope |                3 |      0 | Country/KMK coordination is sourced; Länder details remain research placeholders.                                                                                                   |
+| China                | Complete for current scope |               36 |      0 | Three national curriculum programs and 13 subject labels/translations are sourced.                                                                                                  |
+| Mexico               | Complete for current scope |               14 |      0 | National legal/curriculum records are directly sourced; local implementation detail remains a research gap.                                                                         |
+| Philippines          | Complete for current scope |                8 |      0 | Incoming Grade 11 Academic/TechPro transition scope is sourced; broader JHS, Grade 12, credential, assessment, and TESDA detail remains research work.                              |
+| Pakistan             | Complete for current scope |                8 |      0 | Two FBISE scheme rows are limited to affiliated institutions and the 2025/2026 transition; provincial and other-board systems remain gaps.                                          |
+| Saudi Arabia         | Complete for current scope |                3 |      0 | Secondary pathways system is sourced; broader curriculum, examination, and recognition detail remain research gaps.                                                                 |
+| United Arab Emirates | Complete for current scope |                0 |      0 | No directly sourced detailed curriculum, framework, or requirement rows retained; country and emirate jurisdictions preserved as honest placeholders with documented research gaps. |
 
 ### United States and Georgia
 
@@ -1422,8 +1501,8 @@ Sensitive values remain server-only, including:
 
 - Supabase service-role key;
 - OpenAI key;
-- Mistral OCR key;
-- Google Document AI configuration; and
+- Google Document AI configuration;
+- Azure Document Intelligence configuration; and
 - other future backend integration keys.
 
 No secret or service-role key should be prefixed with `VITE_`.
@@ -1483,33 +1562,33 @@ This section explains the application as if the reader has never built a full-st
 
 ## B1. Essential vocabulary
 
-| Term | Plain-language meaning | Scholaport example |
-|---|---|---|
-| Frontend | The screens and interactions visible in the browser. | Dashboard, transcript page, onboarding, roadmap. |
-| Backend | Code and services that store data, enforce security, or perform private processing. | Supabase, server advisor route, private transcript storage. |
-| Database | Organized permanent storage made of tables, rows, and columns. | `student_profiles`, `transcripts`, `countries`. |
-| Table | A collection of one kind of record. | The `countries` table contains country rows. |
-| Row | One saved record. | One row represents India or one student's transcript. |
-| Column | One property stored on every row. | `iso3`, `coverage_status`, or `user_id`. |
-| SQL | The language used to define and query relational databases. | `create table`, `select`, `insert`, `update`. |
-| Migration | A versioned SQL file that safely changes the database structure. | Adding `roadmap_items` or reference tables. |
-| API | A controlled way for one part of a system to request data or an action from another part. | `getCurrentProfile()` or `POST /api/advisor`. |
-| Authentication | Proving who a user is. | Supabase email/password login. |
-| Authorization | Deciding what an authenticated user is allowed to access. | A student may read only their own transcript. |
-| JWT | A signed login token sent with database requests. | Supabase uses it to identify `auth.uid()`. |
-| RLS | Row Level Security: database rules applied to every row. | A user can update a roadmap row only when its `user_id` matches them. |
-| Primary key | A unique identifier for a row. | A UUID such as a transcript ID. |
-| Foreign key | A field connecting one table to another. | `transcripts.student_profile_id` points to `student_profiles.id`. |
-| Index | A database lookup aid, similar to an index in a textbook. | An index on `countries.iso3` makes country lookup faster. |
-| Constraint | A rule preventing invalid data from being saved. | ISO3 must contain three uppercase letters. |
-| Trigger | Database code that runs automatically after/before an event. | Update `updated_at` whenever a record changes. |
-| JSON/JSONB | Flexible structured data stored inside a database field. | PathMatch dimensions or grade structure. |
-| Object storage | File storage separate from normal database rows. | Original transcript PDFs and images. |
-| Environment variable | Configuration supplied outside source code. | Supabase URL and publishable key. |
-| Seed data | Initial/reference rows loaded into a database. | The 20 priority countries. |
-| Provenance | Evidence describing where a fact came from. | A Georgia requirement linked to the GaDOE rule PDF. |
-| SSR | Server-side rendering: the server prepares initial HTML. | TanStack Start renders Scholaport routes. |
-| RAG | Retrieval-augmented generation: AI answers using retrieved trusted documents. | Planned for the advisor, not fully implemented yet. |
+| Term                 | Plain-language meaning                                                                    | Scholaport example                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Frontend             | The screens and interactions visible in the browser.                                      | Dashboard, transcript page, onboarding, roadmap.                      |
+| Backend              | Code and services that store data, enforce security, or perform private processing.       | Supabase, server advisor route, private transcript storage.           |
+| Database             | Organized permanent storage made of tables, rows, and columns.                            | `student_profiles`, `transcripts`, `countries`.                       |
+| Table                | A collection of one kind of record.                                                       | The `countries` table contains country rows.                          |
+| Row                  | One saved record.                                                                         | One row represents India or one student's transcript.                 |
+| Column               | One property stored on every row.                                                         | `iso3`, `coverage_status`, or `user_id`.                              |
+| SQL                  | The language used to define and query relational databases.                               | `create table`, `select`, `insert`, `update`.                         |
+| Migration            | A versioned SQL file that safely changes the database structure.                          | Adding `roadmap_items` or reference tables.                           |
+| API                  | A controlled way for one part of a system to request data or an action from another part. | `getCurrentProfile()` or `POST /api/advisor`.                         |
+| Authentication       | Proving who a user is.                                                                    | Supabase email/password login.                                        |
+| Authorization        | Deciding what an authenticated user is allowed to access.                                 | A student may read only their own transcript.                         |
+| JWT                  | A signed login token sent with database requests.                                         | Supabase uses it to identify `auth.uid()`.                            |
+| RLS                  | Row Level Security: database rules applied to every row.                                  | A user can update a roadmap row only when its `user_id` matches them. |
+| Primary key          | A unique identifier for a row.                                                            | A UUID such as a transcript ID.                                       |
+| Foreign key          | A field connecting one table to another.                                                  | `transcripts.student_profile_id` points to `student_profiles.id`.     |
+| Index                | A database lookup aid, similar to an index in a textbook.                                 | An index on `countries.iso3` makes country lookup faster.             |
+| Constraint           | A rule preventing invalid data from being saved.                                          | ISO3 must contain three uppercase letters.                            |
+| Trigger              | Database code that runs automatically after/before an event.                              | Update `updated_at` whenever a record changes.                        |
+| JSON/JSONB           | Flexible structured data stored inside a database field.                                  | PathMatch dimensions or grade structure.                              |
+| Object storage       | File storage separate from normal database rows.                                          | Original transcript PDFs and images.                                  |
+| Environment variable | Configuration supplied outside source code.                                               | Supabase URL and publishable key.                                     |
+| Seed data            | Initial/reference rows loaded into a database.                                            | The 20 priority countries.                                            |
+| Provenance           | Evidence describing where a fact came from.                                               | A Georgia requirement linked to the GaDOE rule PDF.                   |
+| SSR                  | Server-side rendering: the server prepares initial HTML.                                  | TanStack Start renders Scholaport routes.                             |
+| RAG                  | Retrieval-augmented generation: AI answers using retrieved trusted documents.             | Planned for the advisor, not fully implemented yet.                   |
 
 ## B2. High-level system architecture
 
@@ -1626,7 +1705,7 @@ Supabase automatically exposes a secure API over PostgreSQL.
 For example, this TypeScript pattern:
 
 ```ts
-client.from("student_profiles").select("*").eq("user_id", userId)
+client.from("student_profiles").select("*").eq("user_id", userId);
 ```
 
 becomes a secure database request. Supabase receives the user's JWT, checks RLS, runs the query, and returns only authorized rows.
@@ -1670,14 +1749,9 @@ They explain that data now comes from the authenticated Supabase layer. This avo
 
 ### API type 5: Future external APIs
 
-Environment placeholders exist for future services such as:
+Environment placeholders exist for private backend integrations such as Google Document AI, Azure Document Intelligence, OpenAI, and future AI/OCR providers.
 
-- Mistral OCR;
-- Google Document AI;
-- OpenAI or another AI model provider; and
-- other private backend integrations.
-
-Those services are not fully connected to the production flow yet.
+The MVP transcript OCR flow is connected server-side with Google Document AI first and Azure Document Intelligence second. Real credentials are required; fake/mock OCR is not used by the production transcript API.
 
 ## B5. Authentication, JWTs, and RLS step by step
 
@@ -2132,148 +2206,148 @@ Example risks Zod catches:
 
 ## B14. File-by-file guide: root and configuration
 
-| File | Purpose |
-|---|---|
-| `package.json` | Project name, dependencies, and commands for development, build, validation, seeding, and deployment. |
-| `pnpm-lock.yaml` | Exact dependency versions for reproducible pnpm installs. |
-| `bun.lock` | Dependency lockfile from the earlier Bun/Lovable workflow. |
-| `pnpm-workspace.yaml` | Allows required native build packages such as `workerd`. |
-| `bunfig.toml` | Adds a 24-hour package-release safety delay, with explicit exceptions. |
-| `tsconfig.json` | Strict TypeScript settings and the `@/` path alias. |
-| `vite.config.ts` | Configures TanStack Start through the Lovable Vite wrapper and custom server entry. |
-| `eslint.config.js` | JavaScript/TypeScript/React lint rules plus Prettier integration. |
-| `.prettierrc` | Formatting style: 100-character width, semicolons, double quotes, trailing commas. |
-| `.prettierignore` | Files/folders excluded from formatting. |
-| `.gitignore` | Prevents environment files, builds, and other local artifacts from being committed. |
-| `.env.example` | Safe documentation of required environment variable names with placeholders. |
-| `.env.local` | Ignored local development configuration. It must never be shown in the pitch or committed. |
-| `.env.production.local` | Ignored local production-build values used during manual staging deployment. |
-| `wrangler.jsonc` | Cloudflare Worker entry, compatibility, static asset binding, and observability. |
-| `components.json` | shadcn/Radix component conventions and import aliases. |
-| `AGENTS.md` | Repository guidance for coding agents. |
-| `README.md` | General repository documentation. |
-| `app_content.md` | Extracted inventory of application text. |
-| `.lovable/project.json` | Metadata connecting the repository to its original Lovable project environment. |
+| File                    | Purpose                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| `package.json`          | Project name, dependencies, and commands for development, build, validation, seeding, and deployment. |
+| `pnpm-lock.yaml`        | Exact dependency versions for reproducible pnpm installs.                                             |
+| `bun.lock`              | Dependency lockfile from the earlier Bun/Lovable workflow.                                            |
+| `pnpm-workspace.yaml`   | Allows required native build packages such as `workerd`.                                              |
+| `bunfig.toml`           | Adds a 24-hour package-release safety delay, with explicit exceptions.                                |
+| `tsconfig.json`         | Strict TypeScript settings and the `@/` path alias.                                                   |
+| `vite.config.ts`        | Configures TanStack Start through the Lovable Vite wrapper and custom server entry.                   |
+| `eslint.config.js`      | JavaScript/TypeScript/React lint rules plus Prettier integration.                                     |
+| `.prettierrc`           | Formatting style: 100-character width, semicolons, double quotes, trailing commas.                    |
+| `.prettierignore`       | Files/folders excluded from formatting.                                                               |
+| `.gitignore`            | Prevents environment files, builds, and other local artifacts from being committed.                   |
+| `.env.example`          | Safe documentation of required environment variable names with placeholders.                          |
+| `.env.local`            | Ignored local development configuration. It must never be shown in the pitch or committed.            |
+| `.env.production.local` | Ignored local production-build values used during manual staging deployment.                          |
+| `wrangler.jsonc`        | Cloudflare Worker entry, compatibility, static asset binding, and observability.                      |
+| `components.json`       | shadcn/Radix component conventions and import aliases.                                                |
+| `AGENTS.md`             | Repository guidance for coding agents.                                                                |
+| `README.md`             | General repository documentation.                                                                     |
+| `app_content.md`        | Extracted inventory of application text.                                                              |
+| `.lovable/project.json` | Metadata connecting the repository to its original Lovable project environment.                       |
 
 ## B15. File-by-file guide: application entry and global structure
 
-| File | Purpose |
-|---|---|
-| `src/start.ts` | Registers request middleware and converts unexpected server errors into a readable HTML error page. |
-| `src/server.ts` | Cloudflare/TanStack server entry; normalizes catastrophic SSR errors. |
-| `src/router.tsx` | Creates TanStack Router and React Query client. |
-| `src/routeTree.gen.ts` | Generated route map. It should be regenerated by tooling, not edited manually. |
-| `src/routes/__root.tsx` | Global HTML shell, metadata, fonts, providers, authentication gate, 404 page, and route-level error UI. |
-| `src/styles.css` | Global Tailwind theme, Scholaport colors, typography, shadows, and layout styling. |
-| `src/assets/scholaport-logo.png` | Main Scholaport logo asset. |
-| `src/hooks/use-mobile.tsx` | Shared responsive hook for determining mobile layout behavior. |
-| `src/routes/README.md` | Route-folder development notes from the project scaffold. |
+| File                             | Purpose                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `src/start.ts`                   | Registers request middleware and converts unexpected server errors into a readable HTML error page.     |
+| `src/server.ts`                  | Cloudflare/TanStack server entry; normalizes catastrophic SSR errors.                                   |
+| `src/router.tsx`                 | Creates TanStack Router and React Query client.                                                         |
+| `src/routeTree.gen.ts`           | Generated route map. It should be regenerated by tooling, not edited manually.                          |
+| `src/routes/__root.tsx`          | Global HTML shell, metadata, fonts, providers, authentication gate, 404 page, and route-level error UI. |
+| `src/styles.css`                 | Global Tailwind theme, Scholaport colors, typography, shadows, and layout styling.                      |
+| `src/assets/scholaport-logo.png` | Main Scholaport logo asset.                                                                             |
+| `src/hooks/use-mobile.tsx`       | Shared responsive hook for determining mobile layout behavior.                                          |
+| `src/routes/README.md`           | Route-folder development notes from the project scaffold.                                               |
 
 ## B16. File-by-file guide: core components
 
-| File | Purpose |
-|---|---|
-| `src/components/AuthProvider.tsx` | Initializes Supabase session state, loads the profile, listens for auth changes, refreshes profiles, and signs out. |
-| `src/components/PassportShell.tsx` | Main authenticated Scholaport sidebar/header layout, profile badge, passport ID, navigation groups, stamps, and status pills. |
-| `src/components/ScholaportLogo.tsx` | Consistent logo/wordmark rendering, including inverse mode. |
-| `src/components/AppShell.tsx` | Separate general AI chat shell and local thread navigation. |
-| `src/components/ChatView.tsx` | AI SDK chat interface for `/chat`, including message streaming and local thread persistence. |
+| File                                | Purpose                                                                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/AuthProvider.tsx`   | Initializes Supabase session state, loads the profile, listens for auth changes, refreshes profiles, and signs out.           |
+| `src/components/PassportShell.tsx`  | Main authenticated Scholaport sidebar/header layout, profile badge, passport ID, navigation groups, stamps, and status pills. |
+| `src/components/ScholaportLogo.tsx` | Consistent logo/wordmark rendering, including inverse mode.                                                                   |
+| `src/components/AppShell.tsx`       | Separate general AI chat shell and local thread navigation.                                                                   |
+| `src/components/ChatView.tsx`       | AI SDK chat interface for `/chat`, including message streaming and local thread persistence.                                  |
 
 ### `src/components/ai-elements/`
 
-| File | Purpose |
-|---|---|
-| `code-block.tsx` | Displays formatted code responses. |
-| `conversation.tsx` | Chat conversation container and scrolling behavior. |
-| `message.tsx` | Renders user/assistant messages and markdown. |
+| File               | Purpose                                                                  |
+| ------------------ | ------------------------------------------------------------------------ |
+| `code-block.tsx`   | Displays formatted code responses.                                       |
+| `conversation.tsx` | Chat conversation container and scrolling behavior.                      |
+| `message.tsx`      | Renders user/assistant messages and markdown.                            |
 | `prompt-input.tsx` | Message composer, submit/stop controls, and attachments/input structure. |
-| `shimmer.tsx` | Animated loading treatment for AI responses. |
-| `tool.tsx` | Displays tool/action states in AI conversations. |
+| `shimmer.tsx`      | Animated loading treatment for AI responses.                             |
+| `tool.tsx`         | Displays tool/action states in AI conversations.                         |
 
 ### `src/components/ui/`
 
 These are reusable interface primitives rather than business logic.
 
-| Files | Purpose |
-|---|---|
-| `button.tsx`, `button-group.tsx` | Standardized actions. |
-| `input.tsx`, `input-group.tsx`, `textarea.tsx`, `input-otp.tsx` | Form inputs. |
-| `select.tsx`, `checkbox.tsx`, `radio-group.tsx`, `switch.tsx`, `slider.tsx` | Choice controls. |
-| `form.tsx`, `label.tsx` | Form structure and accessible labels. |
-| `card.tsx`, `badge.tsx`, `alert.tsx`, `progress.tsx`, `skeleton.tsx`, `spinner.tsx` | Display/status primitives. |
-| `dialog.tsx`, `alert-dialog.tsx`, `drawer.tsx`, `sheet.tsx`, `popover.tsx`, `hover-card.tsx`, `tooltip.tsx` | Overlays and contextual panels. |
-| `dropdown-menu.tsx`, `context-menu.tsx`, `menubar.tsx`, `navigation-menu.tsx`, `command.tsx` | Navigation and command UI. |
-| `tabs.tsx`, `accordion.tsx`, `collapsible.tsx`, `toggle.tsx`, `toggle-group.tsx` | Expandable or selectable content. |
-| `table.tsx`, `chart.tsx`, `pagination.tsx`, `carousel.tsx` | Structured data and collections. |
-| `avatar.tsx`, `aspect-ratio.tsx`, `separator.tsx`, `scroll-area.tsx`, `resizable.tsx`, `sidebar.tsx` | Layout/media utilities. |
-| `calendar.tsx` | Date-selection UI. |
-| `sonner.tsx` | Toast notifications. |
+| Files                                                                                                       | Purpose                               |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `button.tsx`, `button-group.tsx`                                                                            | Standardized actions.                 |
+| `input.tsx`, `input-group.tsx`, `textarea.tsx`, `input-otp.tsx`                                             | Form inputs.                          |
+| `select.tsx`, `checkbox.tsx`, `radio-group.tsx`, `switch.tsx`, `slider.tsx`                                 | Choice controls.                      |
+| `form.tsx`, `label.tsx`                                                                                     | Form structure and accessible labels. |
+| `card.tsx`, `badge.tsx`, `alert.tsx`, `progress.tsx`, `skeleton.tsx`, `spinner.tsx`                         | Display/status primitives.            |
+| `dialog.tsx`, `alert-dialog.tsx`, `drawer.tsx`, `sheet.tsx`, `popover.tsx`, `hover-card.tsx`, `tooltip.tsx` | Overlays and contextual panels.       |
+| `dropdown-menu.tsx`, `context-menu.tsx`, `menubar.tsx`, `navigation-menu.tsx`, `command.tsx`                | Navigation and command UI.            |
+| `tabs.tsx`, `accordion.tsx`, `collapsible.tsx`, `toggle.tsx`, `toggle-group.tsx`                            | Expandable or selectable content.     |
+| `table.tsx`, `chart.tsx`, `pagination.tsx`, `carousel.tsx`                                                  | Structured data and collections.      |
+| `avatar.tsx`, `aspect-ratio.tsx`, `separator.tsx`, `scroll-area.tsx`, `resizable.tsx`, `sidebar.tsx`        | Layout/media utilities.               |
+| `calendar.tsx`                                                                                              | Date-selection UI.                    |
+| `sonner.tsx`                                                                                                | Toast notifications.                  |
 
 ## B17. File-by-file guide: libraries
 
-| File | Purpose and current status |
-|---|---|
-| `src/lib/supabase.ts` | Creates the browser Supabase client only when public env variables exist; throws a clear configuration error otherwise. |
-| `src/lib/scholaport-api.ts` | Primary authenticated student-data access layer with Zod schemas and Supabase queries/mutations. |
-| `src/lib/reference-api.ts` | Global reference-data queries and internal coverage aggregation. |
-| `src/lib/scholaport-data.ts` | Small amount of static UI content, currently advisor starter prompts—not fake student records. |
-| `src/lib/scholaport-store.ts` | Older localStorage MVP state helper. It is not currently imported by the active application and can be removed after confirmation. |
-| `src/lib/threads.ts` | Local browser storage for the separate general AI chat thread list. This is distinct from persistent Academic Advisor history. |
-| `src/lib/ai-gateway.server.ts` | Server-only provider wrapper for the configured Lovable AI gateway. |
-| `src/lib/edu.functions.ts` | Prototype AI transcript-conversion and curriculum-gap server functions. They exist but are not wired into the validated transcript/reference production flow. |
-| `src/lib/error-capture.ts` | Captures recent server errors so swallowed SSR failures can be normalized. |
-| `src/lib/error-page.ts` | Produces readable server error HTML. |
-| `src/lib/lovable-error-reporting.ts` | Reports development/runtime errors through the Lovable environment when available. |
-| `src/lib/utils.ts` | Shared CSS class-name merge helper. |
+| File                                 | Purpose and current status                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/supabase.ts`                | Creates the browser Supabase client only when public env variables exist; throws a clear configuration error otherwise.                                       |
+| `src/lib/scholaport-api.ts`          | Primary authenticated student-data access layer with Zod schemas and Supabase queries/mutations.                                                              |
+| `src/lib/reference-api.ts`           | Global reference-data queries and internal coverage aggregation.                                                                                              |
+| `src/lib/scholaport-data.ts`         | Small amount of static UI content, currently advisor starter prompts—not fake student records.                                                                |
+| `src/lib/scholaport-store.ts`        | Older localStorage MVP state helper. It is not currently imported by the active application and can be removed after confirmation.                            |
+| `src/lib/threads.ts`                 | Local browser storage for the separate general AI chat thread list. This is distinct from persistent Academic Advisor history.                                |
+| `src/lib/ai-gateway.server.ts`       | Server-only provider wrapper for the configured Lovable AI gateway.                                                                                           |
+| `src/lib/edu.functions.ts`           | Prototype AI transcript-conversion and curriculum-gap server functions. They exist but are not wired into the validated transcript/reference production flow. |
+| `src/lib/error-capture.ts`           | Captures recent server errors so swallowed SSR failures can be normalized.                                                                                    |
+| `src/lib/error-page.ts`              | Produces readable server error HTML.                                                                                                                          |
+| `src/lib/lovable-error-reporting.ts` | Reports development/runtime errors through the Lovable environment when available.                                                                            |
+| `src/lib/utils.ts`                   | Shared CSS class-name merge helper.                                                                                                                           |
 
 ## B18. File-by-file guide: user routes
 
-| File/route | Purpose and data source |
-|---|---|
-| `src/routes/index.tsx` — `/` | Academic Passport dashboard. Reads real profile, transcript, gap, roadmap, and path data. |
-| `src/routes/login.tsx` — `/login` | Email/password login/register, optional Google OAuth, and local-only development access. |
-| `src/routes/onboarding.tsx` — `/onboarding` | Three-step profile creation using global reference tables plus honest self-reported fallbacks. |
-| `src/routes/transcript.tsx` — `/transcript` | Private transcript upload, metadata status, courses, and probable mappings when present. |
-| `src/routes/gaps.tsx` — `/gaps` | Displays persisted analysis; never invents one when absent. |
-| `src/routes/roadmap.tsx` — `/roadmap` | Displays and updates persisted roadmap items. |
-| `src/routes/advisor.tsx` — `/advisor` | Persistent Academic Advisor tied to authenticated student context. |
-| `src/routes/pathmatch.tsx` — `/pathmatch` | Displays verified path records when supplied; algorithm/data still incomplete. |
-| `src/routes/twins.tsx` — `/twins` | Verified mentors, question submission, and pending moderation list. |
-| `src/routes/guide.tsx` — `/guide` | Published guide topics/articles from Supabase. |
-| `src/routes/packet.tsx` — `/packet` | Print-ready packet preview using the student's current persisted records. |
-| `src/routes/profile.tsx` — `/profile` | Real profile editing, preferences, privacy explanations, and sign out. |
-| `src/routes/reference-coverage.tsx` — `/reference-coverage` | Internal country-by-country reference inventory. |
-| `src/routes/chat.index.tsx` — `/chat` | Creates/redirects to a browser-local general chat thread. |
-| `src/routes/chat.$threadId.tsx` | Renders one general AI chat thread through `ChatView`. |
+| File/route                                                  | Purpose and data source                                                                        |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/routes/index.tsx` — `/`                                | Academic Passport dashboard. Reads real profile, transcript, gap, roadmap, and path data.      |
+| `src/routes/login.tsx` — `/login`                           | Email/password login/register, optional Google OAuth, and local-only development access.       |
+| `src/routes/onboarding.tsx` — `/onboarding`                 | Three-step profile creation using global reference tables plus honest self-reported fallbacks. |
+| `src/routes/transcript.tsx` — `/transcript`                 | Private transcript upload, metadata status, courses, and probable mappings when present.       |
+| `src/routes/gaps.tsx` — `/gaps`                             | Displays persisted analysis; never invents one when absent.                                    |
+| `src/routes/roadmap.tsx` — `/roadmap`                       | Displays and updates persisted roadmap items.                                                  |
+| `src/routes/advisor.tsx` — `/advisor`                       | Persistent Academic Advisor tied to authenticated student context.                             |
+| `src/routes/pathmatch.tsx` — `/pathmatch`                   | Displays verified path records when supplied; algorithm/data still incomplete.                 |
+| `src/routes/twins.tsx` — `/twins`                           | Verified mentors, question submission, and pending moderation list.                            |
+| `src/routes/guide.tsx` — `/guide`                           | Published guide topics/articles from Supabase.                                                 |
+| `src/routes/packet.tsx` — `/packet`                         | Print-ready packet preview using the student's current persisted records.                      |
+| `src/routes/profile.tsx` — `/profile`                       | Real profile editing, preferences, privacy explanations, and sign out.                         |
+| `src/routes/reference-coverage.tsx` — `/reference-coverage` | Internal country-by-country reference inventory.                                               |
+| `src/routes/chat.index.tsx` — `/chat`                       | Creates/redirects to a browser-local general chat thread.                                      |
+| `src/routes/chat.$threadId.tsx`                             | Renders one general AI chat thread through `ChatView`.                                         |
 
 ## B19. File-by-file guide: server/API routes
 
-| File | Purpose |
-|---|---|
-| `src/routes/api/advisor.ts` | Context-aware advisor response endpoint with provider and conservative fallback modes. |
-| `src/routes/api/chat.ts` | Streaming general AI chat endpoint requiring server AI configuration. |
-| `src/routes/api/v1/passport.ts` | Retired compatibility endpoint returning 410; passport data moved to Supabase. |
-| `src/routes/api/v1/transcripts.ts` | Retired compatibility endpoint returning 410; transcript data moved to Supabase. |
-| `src/routes/api/v1/reference.ts` | Retired compatibility endpoint returning 410; reference data moved to Supabase. |
+| File                               | Purpose                                                                                |
+| ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/routes/api/advisor.ts`        | Context-aware advisor response endpoint with provider and conservative fallback modes. |
+| `src/routes/api/chat.ts`           | Streaming general AI chat endpoint requiring server AI configuration.                  |
+| `src/routes/api/v1/passport.ts`    | Retired compatibility endpoint returning 410; passport data moved to Supabase.         |
+| `src/routes/api/v1/transcripts.ts` | Retired compatibility endpoint returning 410; transcript data moved to Supabase.       |
+| `src/routes/api/v1/reference.ts`   | Retired compatibility endpoint returning 410; reference data moved to Supabase.        |
 
 ## B20. File-by-file guide: database, seeds, and research operations
 
-| Path | Purpose |
-|---|---|
-| `supabase/migrations/202606190001_scholaport_mvp.sql` | Original MVP relational schema and first RLS policies. |
-| `supabase/migrations/202606190002_authenticated_foundation.sql` | User ownership, persistence tables, private storage, guide content, and stronger policies. |
-| `supabase/migrations/202606200001_global_reference_foundation.sql` | Global education reference schema and 20-country shell seed. |
-| `supabase/seed_templates/*.csv` | Google Sheets-compatible blank templates with exact database headers. |
-| `supabase/seed_templates/README.md` | Research/export/import instructions and provenance requirements. |
-| `supabase/seeds/*.csv` | Current import-ready reference package. |
-| `scripts/import-reference-data.ts` | Mechanical validator and optional service-role importer. |
-| `scripts/validate-semantic-reference-audit.ts` | Field-level source/evidence validator. |
-| `SEMANTIC_SOURCE_AUDIT.csv` | Evidence matrix for retained material claims. |
-| `RESEARCH_GAPS.csv` | Explicit backlog of missing or unresolved research. |
-| `RESEARCH_AUDIT.md` | Research history and summaries; some counts are older than current seed files. |
-| `CODEX_ONE_COUNTRY_*.md` | Repeatable country-specific Codex implementation prompts. |
-| `KIMI_ONE_COUNTRY_*.md` | Historical Kimi country-repair prompts. |
-| Regional `*_AUDIT*.csv/.md` files | Working research artifacts used before the final country-by-country workflow. |
+| Path                                                               | Purpose                                                                                    |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `supabase/migrations/202606190001_scholaport_mvp.sql`              | Original MVP relational schema and first RLS policies.                                     |
+| `supabase/migrations/202606190002_authenticated_foundation.sql`    | User ownership, persistence tables, private storage, guide content, and stronger policies. |
+| `supabase/migrations/202606200001_global_reference_foundation.sql` | Global education reference schema and 20-country shell seed.                               |
+| `supabase/seed_templates/*.csv`                                    | Google Sheets-compatible blank templates with exact database headers.                      |
+| `supabase/seed_templates/README.md`                                | Research/export/import instructions and provenance requirements.                           |
+| `supabase/seeds/*.csv`                                             | Current import-ready reference package.                                                    |
+| `scripts/import-reference-data.ts`                                 | Mechanical validator and optional service-role importer.                                   |
+| `scripts/validate-semantic-reference-audit.ts`                     | Field-level source/evidence validator.                                                     |
+| `SEMANTIC_SOURCE_AUDIT.csv`                                        | Evidence matrix for retained material claims.                                              |
+| `RESEARCH_GAPS.csv`                                                | Explicit backlog of missing or unresolved research.                                        |
+| `RESEARCH_AUDIT.md`                                                | Research history and summaries; some counts are older than current seed files.             |
+| `CODEX_ONE_COUNTRY_*.md`                                           | Repeatable country-specific Codex implementation prompts.                                  |
+| `KIMI_ONE_COUNTRY_*.md`                                            | Historical Kimi country-repair prompts.                                                    |
+| Regional `*_AUDIT*.csv/.md` files                                  | Working research artifacts used before the final country-by-country workflow.              |
 
 ## B21. Important architectural cleanup items
 
@@ -2840,3 +2914,71 @@ Current local validation:
 This is not the full United States completion requested by the final product requirement. It is a safe correction layer: U.S. jurisdiction identity/selectability is complete, Georgia and Texas have partial detailed state frameworks in the local package, and the remaining 49 state/DC detailed graduation frameworks are marked `research_pending` rather than fabricated.
 
 No India work was started.
+
+## C14. June 25, 2026 — Personalized Academic Roadmap Engine implemented locally
+
+The roadmap layer now sits after the saved gap analysis layer. It does not redo OCR, translation, credit mapping, or gap calculation. It converts real saved `gap_analyses` and `gap_requirements` rows into persisted `roadmaps` and `roadmap_items`.
+
+Implemented locally:
+
+- Added `supabase/migrations/202606250004_academic_roadmap_engine.sql`.
+- Extended `roadmaps` with transcript/framework links, status, roadmap type, risk, urgency, item counts, summaries, counselor questions, warnings, snapshots, stale reason, and generation timestamps.
+- Extended `roadmap_items` with gap/requirement links, action type, timing bucket, risk, counselor-review flag, counselor question, student instructions, evidence note, completion note, display order, and completion timestamp.
+- Added deterministic roadmap generation under `src/lib/roadmap`.
+- Added authenticated API actions for generating/regenerating roadmaps, updating roadmap item status/notes, and adding personal manual roadmap tasks.
+- Rebuilt `/roadmap` so it renders saved backend rows only and shows honest prerequisite states when transcript, mapping, gap analysis, framework, or gap-requirement records are missing.
+
+The production page does not contain hardcoded demo roadmap cards, hardcoded Georgia/Texas roadmap examples, static sample counselor questions, or frontend-only fake success states. Manual items are saved as user-created `roadmap_items` and do not change official requirement values.
+
+Current MVP readiness depends on the previous chain being present for the same user: confirmed transcript courses, saved probable credit mappings, and a saved gap analysis with requirement rows. Georgia/Texas behavior depends on the selected destination framework and whatever verified requirement rows exist in the database. Tamil Nadu and Andhra Pradesh source-specific value depends on the pulled source reference rows and live Supabase import status.
+
+## C15. June 25, 2026 — Counselor-Ready Packet Engine implemented locally
+
+The packet layer now assembles a counselor-ready preview from the saved Scholaport workflow. It does not redo OCR, translation, mapping, gap analysis, or roadmap generation.
+
+Implemented locally:
+
+- Added `supabase/migrations/202606250005_counselor_packet_engine.sql`.
+- Extended `counselor_packets` with mapping/gap/roadmap links, destination framework IDs, packet type/version, snapshot JSON, included/missing sections, warnings, counselor questions, source summary, generated file metadata, PDF/HTML metadata, stale reason, and completion timestamps.
+- Added `counselor_packet_sections` for saved section snapshots with owner-scoped RLS.
+- Added backend packet assembly under `src/lib/packet`.
+- Added dedicated authenticated `/api/v1/packets` route for preview loading, generation/regeneration, and download-url requests.
+- Rebuilt `/packet` so it renders saved `packet_snapshot_json` and saved packet section data only.
+
+The production packet page no longer contains hardcoded packet sections, fixed demo dates, static counselor questions, PathMatch packet filler, fake Georgia/Texas examples, or fake source/provenance rows. If packet prerequisites are missing, the page shows honest prerequisite states. If provenance is missing, the packet says the source is not yet linked in the reference database.
+
+PDF generation is not faked. The current runtime exposes a printable saved snapshot preview and browser Print/Save as PDF. Packet rows store an honest `pdf_generation_error`; `pdf_ready` is not claimed. Private generated-file storage is represented by schema fields but is not enabled until a private bucket/server export workflow is configured.
+
+## C16. June 25, 2026 — Current MVP onboarding scope locked
+
+The user-facing onboarding/profile flow is now scoped to the real current MVP slice instead of the broader internal reference foundation.
+
+MVP source behavior:
+
+- The source country dropdown shows India as selectable.
+- China, Mexico, Philippines, Pakistan, Bangladesh, Ukraine, Russia, Egypt, and Nigeria are visible as coming soon and disabled.
+- After India is selected, the source state dropdown is limited to Tamil Nadu and Andhra Pradesh.
+- Tamil Nadu shows only Tamil Nadu SSLC and Tamil Nadu HSC.
+- Andhra Pradesh shows only Andhra Pradesh SSC and Andhra Pradesh Intermediate.
+- CBSE remains in the reference database but is hidden from current MVP onboarding.
+
+MVP destination behavior:
+
+- The destination country dropdown shows United States as selectable.
+- Canada, United Kingdom, Australia, Germany, and United Arab Emirates are visible as coming soon and disabled.
+- After United States is selected, the destination state dropdown is limited to Georgia and Texas.
+- Frameworks are filtered by the selected state. Scholaport does not show a generic national U.S. framework and does not fall back between Georgia and Texas.
+
+Implementation details:
+
+- `src/lib/mvp-reference-scope.ts` now centralizes the current MVP allowlists and filtering helpers.
+- Onboarding still consumes real Supabase/reference rows; the allowlists filter those rows and do not create fake saved IDs.
+- Profile records now support `source_jurisdiction_id` and `source_jurisdiction_label`.
+- Old unsupported profiles, including CBSE or non-MVP state/country selections, are flagged and routed back to onboarding for reselection.
+- Internal `/reference-coverage` remains broader and can continue showing the full reference foundation.
+
+Origin status:
+
+- `origin/main` was pulled into this local checkout with a fast-forward after preserving local work in a stash.
+- The pulled history includes the Andhra Pradesh source-curriculum foundation and package-lock commit.
+- Local code now filters onboarding/profile against the pulled Tamil Nadu, Andhra Pradesh, Georgia, and Texas MVP reference rows.

@@ -29,6 +29,7 @@ import { Route as ApiAdvisorRouteImport } from './routes/api/advisor'
 import { Route as ApiV1TranscriptsRouteImport } from './routes/api/v1/transcripts'
 import { Route as ApiV1ReferenceRouteImport } from './routes/api/v1/reference'
 import { Route as ApiV1PassportRouteImport } from './routes/api/v1/passport'
+import { Route as ApiV1PacketsRouteImport } from './routes/api/v1/packets'
 
 const TwinsRoute = TwinsRouteImport.update({
   id: '/twins',
@@ -130,6 +131,11 @@ const ApiV1PassportRoute = ApiV1PassportRouteImport.update({
   path: '/api/v1/passport',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1PacketsRoute = ApiV1PacketsRouteImport.update({
+  id: '/api/v1/packets',
+  path: '/api/v1/packets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
+  '/api/v1/packets': typeof ApiV1PacketsRoute
   '/api/v1/passport': typeof ApiV1PassportRoute
   '/api/v1/reference': typeof ApiV1ReferenceRoute
   '/api/v1/transcripts': typeof ApiV1TranscriptsRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat': typeof ChatIndexRoute
+  '/api/v1/packets': typeof ApiV1PacketsRoute
   '/api/v1/passport': typeof ApiV1PassportRoute
   '/api/v1/reference': typeof ApiV1ReferenceRoute
   '/api/v1/transcripts': typeof ApiV1TranscriptsRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/chat/': typeof ChatIndexRoute
+  '/api/v1/packets': typeof ApiV1PacketsRoute
   '/api/v1/passport': typeof ApiV1PassportRoute
   '/api/v1/reference': typeof ApiV1ReferenceRoute
   '/api/v1/transcripts': typeof ApiV1TranscriptsRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/v1/packets'
     | '/api/v1/passport'
     | '/api/v1/reference'
     | '/api/v1/transcripts'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/chat/$threadId'
     | '/chat'
+    | '/api/v1/packets'
     | '/api/v1/passport'
     | '/api/v1/reference'
     | '/api/v1/transcripts'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/chat/$threadId'
     | '/chat/'
+    | '/api/v1/packets'
     | '/api/v1/passport'
     | '/api/v1/reference'
     | '/api/v1/transcripts'
@@ -285,6 +297,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
   ChatIndexRoute: typeof ChatIndexRoute
+  ApiV1PacketsRoute: typeof ApiV1PacketsRoute
   ApiV1PassportRoute: typeof ApiV1PassportRoute
   ApiV1ReferenceRoute: typeof ApiV1ReferenceRoute
   ApiV1TranscriptsRoute: typeof ApiV1TranscriptsRoute
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PassportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/packets': {
+      id: '/api/v1/packets'
+      path: '/api/v1/packets'
+      fullPath: '/api/v1/packets'
+      preLoaderRoute: typeof ApiV1PacketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -453,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
   ChatIndexRoute: ChatIndexRoute,
+  ApiV1PacketsRoute: ApiV1PacketsRoute,
   ApiV1PassportRoute: ApiV1PassportRoute,
   ApiV1ReferenceRoute: ApiV1ReferenceRoute,
   ApiV1TranscriptsRoute: ApiV1TranscriptsRoute,

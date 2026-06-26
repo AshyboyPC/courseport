@@ -15,7 +15,18 @@ import { toast } from "sonner";
 import { ScholaportLogo } from "@/components/ScholaportLogo";
 import { useAuth } from "@/components/AuthProvider";
 import { upsertCurrentProfile } from "@/lib/scholaport-api";
-import { getDestinationScopeNote } from "@/lib/mvp-reference-scope";
+import {
+  filterMvpDestinationFrameworks,
+  filterMvpDestinationJurisdictions,
+  filterMvpSourceCurricula,
+  filterMvpSourceJurisdictions,
+  getMvpDestinationCountryAvailability,
+  getMvpProfileUnsupportedReasons,
+  getMvpSourceCountryAvailability,
+  getDestinationScopeNote,
+  isMvpSelectableDestinationCountry,
+  isMvpSelectableSourceCountry,
+} from "@/lib/mvp-reference-scope";
 import {
   getCurricula,
   getDestinationCountries,
@@ -35,7 +46,7 @@ const OTHER_OPTION = "__other__";
 
 function Onboarding() {
   const navigate = useNavigate();
-  const { user, refreshProfile, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const sourceCountries = useQuery({ queryKey: ["source-countries"], queryFn: getSourceCountries });
   const destinationCountries = useQuery({
     queryKey: ["destination-countries"],
@@ -43,6 +54,7 @@ function Onboarding() {
   });
   const [step, setStep] = useState(0);
   const [sourceCountryId, setSourceCountryId] = useState("");
+  const [sourceJurisdictionId, setSourceJurisdictionId] = useState("");
   const [sourceCurriculumId, setSourceCurriculumId] = useState("");
   const [selfReportedCurriculum, setSelfReportedCurriculum] = useState("");
   const [destinationCountryId, setDestinationCountryId] = useState("");
@@ -56,38 +68,52 @@ function Onboarding() {
   const [graduationYear, setGraduationYear] = useState(String(new Date().getFullYear() + 1));
   const [language, setLanguage] = useState("en");
   const [firstName, setFirstName] = useState(
-    user?.user_metadata.first_name
-      ? String(user.user_metadata.first_name)
-      : user?.user_metadata.given_name
-        ? String(user.user_metadata.given_name)
-        : user?.user_metadata.full_name
-          ? String(user.user_metadata.full_name).split(" ")[0]
-          : "",
+    profile?.first_name ??
+      (user?.user_metadata.first_name
+        ? String(user.user_metadata.first_name)
+        : user?.user_metadata.given_name
+          ? String(user.user_metadata.given_name)
+          : user?.user_metadata.full_name
+            ? String(user.user_metadata.full_name).split(" ")[0]
+            : ""),
   );
   const [lastName, setLastName] = useState(
-    user?.user_metadata.last_name
-      ? String(user.user_metadata.last_name)
-      : user?.user_metadata.family_name
-        ? String(user.user_metadata.family_name)
-        : "",
+    profile?.last_name ??
+      (user?.user_metadata.last_name
+        ? String(user.user_metadata.last_name)
+        : user?.user_metadata.family_name
+          ? String(user.user_metadata.family_name)
+          : ""),
   );
   const [saving, setSaving] = useState(false);
+  const unsupportedProfileReasons = profile ? getMvpProfileUnsupportedReasons(profile) : [];
 
   useEffect(() => {
-    if (!sourceCountryId && sourceCountries.data?.[0]) {
-      setSourceCountryId(sourceCountries.data[0].id);
+    if (!sourceCountryId) {
+      const defaultSourceCountry = sourceCountries.data?.find((country) =>
+        isMvpSelectableSourceCountry(country.iso3),
+      );
+      if (defaultSourceCountry) setSourceCountryId(defaultSourceCountry.id);
     }
   }, [sourceCountries.data, sourceCountryId]);
   useEffect(() => {
-    if (!destinationCountryId && destinationCountries.data?.[0]) {
-      setDestinationCountryId(destinationCountries.data[0].id);
+    if (!destinationCountryId) {
+      const defaultDestinationCountry = destinationCountries.data?.find((country) =>
+        isMvpSelectableDestinationCountry(country.iso3),
+      );
+      if (defaultDestinationCountry) setDestinationCountryId(defaultDestinationCountry.id);
     }
   }, [destinationCountries.data, destinationCountryId]);
 
-  const curricula = useQuery({
-    queryKey: ["curricula", sourceCountryId],
-    queryFn: () => getCurricula(sourceCountryId),
+  const sourceJurisdictions = useQuery({
+    queryKey: ["source-jurisdictions", sourceCountryId],
+    queryFn: () => getJurisdictions(sourceCountryId),
     enabled: Boolean(sourceCountryId),
+  });
+  const curricula = useQuery({
+    queryKey: ["curricula", sourceCountryId, sourceJurisdictionId],
+    queryFn: () => getCurricula(sourceCountryId, sourceJurisdictionId),
+    enabled: Boolean(sourceCountryId && sourceJurisdictionId),
   });
   const jurisdictions = useQuery({
     queryKey: ["jurisdictions", destinationCountryId],
@@ -107,7 +133,7 @@ function Onboarding() {
         destinationJurisdictionId,
         Number(graduationYear),
       ),
-    enabled: Boolean(destinationCountryId),
+    enabled: Boolean(destinationCountryId && destinationJurisdictionId),
   });
   const programs = useQuery({
     queryKey: [
@@ -118,29 +144,114 @@ function Onboarding() {
     ],
     queryFn: () =>
       getEducationPrograms(destinationCountryId, destinationJurisdictionId, destinationFrameworkId),
-    enabled: Boolean(destinationCountryId),
+    enabled: Boolean(destinationCountryId && destinationJurisdictionId),
   });
 
+  const sourceCountryOptions = sourceCountries.data ?? [];
+  const destinationCountryOptions = destinationCountries.data ?? [];
+  const sourceCountry = sourceCountryOptions.find((country) => country.id === sourceCountryId);
+  const sourceJurisdictionOptions = filterMvpSourceJurisdictions(
+    sourceJurisdictions.data ?? [],
+    sourceCountry?.iso3,
+  );
+  const sourceJurisdiction = sourceJurisdictionOptions.find(
+    (item) => item.id === sourceJurisdictionId,
+  );
+  const sourceCurriculumOptions = filterMvpSourceCurricula(
+    curricula.data ?? [],
+    sourceJurisdiction,
+  );
+  const selectedCurriculum = sourceCurriculumOptions.find((item) => item.id === sourceCurriculumId);
+  const destinationCountry = destinationCountries.data?.find(
+    (country) => country.id === destinationCountryId,
+  );
+  const destinationJurisdictionOptions = filterMvpDestinationJurisdictions(
+    jurisdictions.data ?? [],
+    destinationCountry?.iso3,
+  );
+  const destinationJurisdiction = destinationJurisdictionOptions.find(
+    (item) => item.id === destinationJurisdictionId,
+  );
+  const selectedProgram = programs.data?.find((item) => item.id === programId);
+  const frameworkOptions = filterMvpDestinationFrameworks(
+    frameworks.data ?? [],
+    destinationJurisdiction,
+  );
+  const selectedFramework = frameworkOptions.find((item) => item.id === destinationFrameworkId);
+  const curriculumName = selectedCurriculum?.name ?? "";
+  const programName = selectedProgram?.program_name || selfReportedProgram.trim() || null;
+  const referenceError = sourceCountries.error || destinationCountries.error;
+  const referenceLoading = sourceCountries.isLoading || destinationCountries.isLoading;
+  const destinationScopeNote = destinationCountry
+    ? getDestinationScopeNote(destinationCountry.iso3)
+    : null;
+  const sourceStatePlaceholder = sourceJurisdictions.isLoading
+    ? "Loading source states..."
+    : !sourceCountry || sourceCountry.iso3 !== "IND"
+      ? "Select India first"
+      : sourceJurisdictions.error
+        ? "Source state data unavailable"
+        : sourceJurisdictionOptions.length
+          ? "Select Tamil Nadu or Andhra Pradesh"
+          : "Tamil Nadu/AP not loaded yet";
+  const sourceCurriculumPlaceholder = !sourceJurisdiction
+    ? "Select a source state first"
+    : curricula.isLoading
+      ? "Loading state curricula..."
+      : curricula.error
+        ? "Curriculum data unavailable"
+        : sourceCurriculumOptions.length
+          ? "Choose a state curriculum"
+          : "No MVP curriculum loaded yet";
+
   useEffect(() => {
-    if (!destinationJurisdictionId && jurisdictions.data?.length === 1) {
-      setDestinationJurisdictionId(jurisdictions.data[0].id);
+    if (
+      sourceJurisdictionId &&
+      sourceJurisdictions.data &&
+      !sourceJurisdictionOptions.some((item) => item.id === sourceJurisdictionId)
+    ) {
+      setSourceJurisdictionId("");
+      setSourceCurriculumId("");
+      setSelfReportedCurriculum("");
     }
-  }, [destinationJurisdictionId, jurisdictions.data]);
+  }, [sourceJurisdictionId, sourceJurisdictionOptions, sourceJurisdictions.data]);
   useEffect(() => {
-    if (!destinationFrameworkId && frameworks.data?.length === 1) {
-      setDestinationFrameworkId(frameworks.data[0].id);
+    if (
+      sourceCurriculumId &&
+      curricula.data &&
+      !sourceCurriculumOptions.some((item) => item.id === sourceCurriculumId)
+    ) {
+      setSourceCurriculumId("");
+      setSelfReportedCurriculum("");
     }
-  }, [destinationFrameworkId, frameworks.data]);
+  }, [sourceCurriculumId, sourceCurriculumOptions, curricula.data]);
+  useEffect(() => {
+    if (
+      destinationJurisdictionId &&
+      jurisdictions.data &&
+      !destinationJurisdictionOptions.some((item) => item.id === destinationJurisdictionId)
+    ) {
+      setDestinationJurisdictionId("");
+      setDestinationFrameworkId("");
+      setProgramId("");
+      setSelfReportedProgram("");
+    }
+  }, [destinationJurisdictionId, destinationJurisdictionOptions, jurisdictions.data]);
+  useEffect(() => {
+    if (!destinationFrameworkId && frameworkOptions.length === 1) {
+      setDestinationFrameworkId(frameworkOptions[0].id);
+    }
+  }, [destinationFrameworkId, frameworkOptions]);
   useEffect(() => {
     if (
       destinationFrameworkId &&
       frameworks.data &&
-      !frameworks.data.some((framework) => framework.id === destinationFrameworkId)
+      !frameworkOptions.some((framework) => framework.id === destinationFrameworkId)
     ) {
       setDestinationFrameworkId("");
       setProgramId("");
     }
-  }, [destinationFrameworkId, frameworks.data]);
+  }, [destinationFrameworkId, frameworkOptions, frameworks.data]);
   useEffect(() => {
     if (
       programId &&
@@ -152,39 +263,32 @@ function Onboarding() {
     }
   }, [programId, programs.data]);
 
-  const sourceCountry = sourceCountries.data?.find((country) => country.id === sourceCountryId);
-  const selectedCurriculum = curricula.data?.find((item) => item.id === sourceCurriculumId);
-  const destinationCountry = destinationCountries.data?.find(
-    (country) => country.id === destinationCountryId,
-  );
-  const destinationJurisdiction = jurisdictions.data?.find(
-    (item) => item.id === destinationJurisdictionId,
-  );
-  const selectedProgram = programs.data?.find((item) => item.id === programId);
-  const selectedFramework = frameworks.data?.find((item) => item.id === destinationFrameworkId);
-  const curriculumName = selectedCurriculum?.name || selfReportedCurriculum.trim();
-  const programName = selectedProgram?.program_name || selfReportedProgram.trim() || null;
-  const referenceError = sourceCountries.error || destinationCountries.error;
-  const referenceLoading = sourceCountries.isLoading || destinationCountries.isLoading;
-  const destinationScopeNote = destinationCountry
-    ? getDestinationScopeNote(destinationCountry.iso3)
-    : null;
-
   const continueToNextStep = () => {
-    if (step === 0 && (!sourceCountry || !curriculumName)) {
-      toast.error("Choose a source country and enter the curriculum shown on your transcript.");
+    if (step === 0 && (!sourceCountry || !isMvpSelectableSourceCountry(sourceCountry.iso3))) {
+      toast.error("For the current MVP, choose India as your source country.");
       return;
     }
-    if (step === 1 && !destinationCountry) {
-      toast.error("Choose a destination country.");
+    if (step === 0 && !sourceJurisdiction) {
+      toast.error("Choose Tamil Nadu or Andhra Pradesh as your source state.");
       return;
     }
-    if (step === 1 && destinationCountry?.iso3 === "USA" && !destinationJurisdiction) {
-      toast.error("Choose a U.S. state or the District of Columbia before selecting a framework.");
+    if (step === 0 && !selectedCurriculum) {
+      toast.error("Choose the source curriculum that matches the selected state.");
       return;
     }
-    if (step === 1 && (frameworks.data?.length ?? 0) > 1 && !selectedFramework) {
-      toast.error("Choose the graduation framework that applies to your cohort.");
+    if (
+      step === 1 &&
+      (!destinationCountry || !isMvpSelectableDestinationCountry(destinationCountry.iso3))
+    ) {
+      toast.error("For the current MVP, choose United States as your destination country.");
+      return;
+    }
+    if (step === 1 && !destinationJurisdiction) {
+      toast.error("Choose Georgia or Texas before selecting a framework.");
+      return;
+    }
+    if (step === 1 && !selectedFramework) {
+      toast.error("Choose the graduation framework that applies to the selected state.");
       return;
     }
     setStep((current) => Math.min(2, current + 1));
@@ -200,7 +304,18 @@ function Onboarding() {
   };
 
   const finishOnboarding = async () => {
-    if (!user || !sourceCountry || !destinationCountry || !curriculumName) return;
+    if (
+      !user ||
+      !sourceCountry ||
+      !sourceJurisdiction ||
+      !destinationCountry ||
+      !destinationJurisdiction ||
+      !selectedCurriculum ||
+      !selectedFramework
+    ) {
+      toast.error("Complete the verified MVP route before creating your passport.");
+      return;
+    }
     if (!firstName.trim()) return toast.error("Enter your first name to create your passport.");
     setSaving(true);
     try {
@@ -218,11 +333,13 @@ function Onboarding() {
         expected_graduation_year: Number(graduationYear),
         preferred_language: language,
         source_country_id: sourceCountry.id,
+        source_jurisdiction_id: sourceJurisdiction.id,
         source_curriculum_id: selectedCurriculum?.id ?? null,
         destination_country_id: destinationCountry.id,
         destination_jurisdiction_id: destinationJurisdiction?.id ?? null,
         destination_framework_id: selectedFramework?.id ?? null,
         destination_program_id: selectedProgram?.id ?? null,
+        source_jurisdiction_label: sourceJurisdiction.name,
         destination_country_label: destinationCountry.name,
         destination_jurisdiction_label: destinationJurisdiction?.name ?? null,
         destination_framework_label: selectedFramework?.framework_name ?? null,
@@ -258,7 +375,8 @@ function Onboarding() {
       <p className="eyebrow">Step 1 of 3</p>
       <h1>Where did your learning begin?</h1>
       <p className="subcopy">
-        Choose a priority country, then identify the curriculum shown on your transcript.
+        For the current MVP, choose India, then select Tamil Nadu or Andhra Pradesh and the matching
+        state curriculum shown on your transcript.
       </p>
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         <label className="field">
@@ -275,6 +393,7 @@ function Onboarding() {
             value={sourceCountryId}
             onChange={(event) => {
               setSourceCountryId(event.target.value);
+              setSourceJurisdictionId("");
               setSourceCurriculumId("");
               setSelfReportedCurriculum("");
             }}
@@ -282,71 +401,111 @@ function Onboarding() {
             <option value="" disabled>
               Select a country
             </option>
-            {(sourceCountries.data ?? []).map((country) => (
-              <option key={country.id} value={country.id}>
-                {country.name}
+            {sourceCountryOptions.map((country) => {
+              const availability = getMvpSourceCountryAvailability(country.iso3);
+              return (
+                <option
+                  key={country.id}
+                  value={country.id}
+                  disabled={availability !== "selectable"}
+                >
+                  {country.name}
+                  {availability === "coming_soon" ? " — Coming soon" : ""}
+                </option>
+              );
+            })}
+          </select>
+        </label>
+        <label className="field">
+          <span>Source state</span>
+          <select
+            value={sourceJurisdictionId}
+            onChange={(event) => {
+              setSourceJurisdictionId(event.target.value);
+              setSourceCurriculumId("");
+              setSelfReportedCurriculum("");
+            }}
+            disabled={sourceJurisdictions.isLoading || !sourceJurisdictionOptions.length}
+          >
+            <option value="">{sourceStatePlaceholder}</option>
+            {sourceJurisdictionOptions.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
               </option>
             ))}
           </select>
         </label>
-        <label className="field">
+        <label className="field sm:col-span-2">
           <span>Source curriculum</span>
-          {curricula.data?.length ? (
-            <>
-              <select
-                value={sourceCurriculumId}
-                onChange={(event) => {
-                  setSourceCurriculumId(event.target.value);
-                  if (event.target.value !== OTHER_OPTION) setSelfReportedCurriculum("");
-                }}
-              >
-                <option value="">Choose a sourced curriculum</option>
-                {curricula.data.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} · {item.coverage_status.replaceAll("_", " ")}
-                  </option>
-                ))}
-                <option value={OTHER_OPTION}>My curriculum is not listed</option>
-              </select>
-              {sourceCurriculumId === OTHER_OPTION && (
-                <input
-                  className="mt-2"
-                  value={selfReportedCurriculum}
-                  onChange={(event) => setSelfReportedCurriculum(event.target.value)}
-                  placeholder="Enter the exact name from your transcript"
-                />
-              )}
-            </>
-          ) : (
-            <input
-              value={selfReportedCurriculum}
-              onChange={(event) => setSelfReportedCurriculum(event.target.value)}
-              placeholder="Enter the name from your transcript"
-            />
-          )}
+          <select
+            value={sourceCurriculumId}
+            onChange={(event) => setSourceCurriculumId(event.target.value)}
+            disabled={!sourceJurisdiction || !sourceCurriculumOptions.length}
+          >
+            <option value="">{sourceCurriculumPlaceholder}</option>
+            {sourceCurriculumOptions.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} · {item.coverage_status.replaceAll("_", " ")}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
-      {!curricula.data?.length && (
+      {sourceCountry && !isMvpSelectableSourceCountry(sourceCountry.iso3) && (
         <CoverageNotice>
-          More detailed local curriculum data is coming soon. Your curriculum entry will be treated
-          as student-reported, not verified reference data.
+          {sourceCountry.name} is visible in Scholaport as a future source country, but it is not
+          selectable for the current MVP workflow.
         </CoverageNotice>
       )}
-      {sourceCountry?.coverage_status === "country_seed_only" &&
-        Boolean(curricula.data?.length) && (
+      {sourceCountry?.iso3 === "IND" &&
+        !sourceJurisdictions.isLoading &&
+        !sourceJurisdictionOptions.length &&
+        !sourceJurisdictions.error && (
           <CoverageNotice>
-            The country-level profile is still limited. The listed curricula are separately sourced
-            and labeled with their current evidence coverage.
+            Tamil Nadu and Andhra Pradesh are not loaded from Supabase yet. Scholaport will not use
+            placeholder source-state data.
           </CoverageNotice>
         )}
+      {sourceJurisdictions.error && (
+        <RetryNotice
+          text={
+            sourceJurisdictions.error instanceof Error
+              ? sourceJurisdictions.error.message
+              : "Unable to load source states."
+          }
+          onRetry={() => void sourceJurisdictions.refetch()}
+        />
+      )}
+      {sourceJurisdiction && !sourceCurriculumOptions.length && (
+        <CoverageNotice>
+          Curricula for this state are still being verified for MVP onboarding. Scholaport will not
+          use a placeholder curriculum.
+        </CoverageNotice>
+      )}
+      {curricula.error && (
+        <RetryNotice
+          text={
+            curricula.error instanceof Error
+              ? curricula.error.message
+              : "Unable to load source curricula."
+          }
+          onRetry={() => void curricula.refetch()}
+        />
+      )}
+      {unsupportedProfileReasons.length > 0 && (
+        <CoverageNotice>
+          Your previous profile used values outside the current MVP scope. Please reselect the India
+          state board path before continuing.
+        </CoverageNotice>
+      )}
     </div>,
     <div key="destination">
       <Icon icon={<MapPin />} />
       <p className="eyebrow">Step 2 of 3</p>
       <h1>Where are you headed?</h1>
       <p className="subcopy">
-        For the United States, choose the destination state or DC before Scholaport determines the
-        applicable graduation framework.
+        For the current MVP, choose the United States, then select Georgia or Texas before
+        Scholaport loads that state's graduation framework.
       </p>
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         <label className="field">
@@ -363,15 +522,23 @@ function Onboarding() {
             <option value="" disabled>
               Select a country
             </option>
-            {(destinationCountries.data ?? []).map((country) => (
-              <option key={country.id} value={country.id}>
-                {country.name}
-              </option>
-            ))}
+            {destinationCountryOptions.map((country) => {
+              const availability = getMvpDestinationCountryAvailability(country.iso3);
+              return (
+                <option
+                  key={country.id}
+                  value={country.id}
+                  disabled={availability !== "selectable"}
+                >
+                  {country.name}
+                  {availability === "coming_soon" ? " — Coming soon" : ""}
+                </option>
+              );
+            })}
           </select>
         </label>
         <label className="field">
-          <span>Jurisdiction</span>
+          <span>Destination state</span>
           <select
             value={destinationJurisdictionId}
             onChange={(event) => {
@@ -380,14 +547,16 @@ function Onboarding() {
               setProgramId("");
               setSelfReportedProgram("");
             }}
-            disabled={!jurisdictions.data?.length}
+            disabled={!destinationJurisdictionOptions.length}
           >
             <option value="">
-              {jurisdictions.data?.length ? "Country-level planning" : "No local data available"}
+              {destinationJurisdictionOptions.length
+                ? "Select Georgia or Texas"
+                : "Select United States first"}
             </option>
-            {(jurisdictions.data ?? []).map((item) => (
+            {destinationJurisdictionOptions.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.name} · {item.code} · {item.detail_coverage_status.replaceAll("_", " ")}
+                {item.name}
               </option>
             ))}
           </select>
@@ -430,16 +599,18 @@ function Onboarding() {
           <select
             value={destinationFrameworkId}
             onChange={(event) => setDestinationFrameworkId(event.target.value)}
-            disabled={!frameworks.data?.length}
+            disabled={!frameworkOptions.length}
           >
             <option value="">
               {frameworks.isLoading
                 ? "Loading frameworks…"
-                : frameworks.data?.length
+                : frameworkOptions.length
                   ? "Not selected"
-                  : "No verified framework available"}
+                  : destinationJurisdiction
+                    ? "Framework still being verified"
+                    : "Select a destination state first"}
             </option>
-            {(frameworks.data ?? []).map((item) => (
+            {frameworkOptions.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.framework_name} · {item.credential_awarded ?? "credential"} ·{" "}
                 {item.coverage_status.replaceAll("_", " ")}
@@ -454,16 +625,16 @@ function Onboarding() {
           {destinationScopeNote} Scholaport will not display unsupported local requirements.
         </CoverageNotice>
       )}
-      {Boolean(jurisdictions.data?.length) &&
-        !destinationJurisdiction &&
-        !frameworks.data?.length && (
-          <CoverageNotice>
-            Choose a sourced jurisdiction to check for a separately sourced graduation framework.
-          </CoverageNotice>
-        )}
-      {destinationJurisdiction && !frameworks.data?.length && (
+      {destinationCountry && !isMvpSelectableDestinationCountry(destinationCountry.iso3) && (
         <CoverageNotice>
-          Detailed graduation requirements for this jurisdiction are still being verified.
+          {destinationCountry.name} is visible in Scholaport as a future destination, but it is not
+          selectable for the current MVP workflow.
+        </CoverageNotice>
+      )}
+      {destinationJurisdiction && !frameworkOptions.length && !frameworks.isLoading && (
+        <CoverageNotice>
+          Detailed graduation requirements for {destinationJurisdiction.name} are still being
+          verified. Scholaport will not fall back to another state's framework.
         </CoverageNotice>
       )}
       {frameworks.error && (
@@ -596,7 +767,9 @@ function Onboarding() {
               <Sparkles className="h-5 w-5 text-[#01C3AD]" />
               <p className="mt-3 text-xs font-bold">Your route so far</p>
               <p className="mt-1 text-[10px] leading-4 text-white/45">
-                {sourceCountry?.name ?? "Choose origin"} · {curriculumName || "Curriculum pending"}
+                {sourceCountry?.name ?? "Choose origin"} ·{" "}
+                {sourceJurisdiction?.name ?? "Choose source state"} ·{" "}
+                {curriculumName || "Curriculum pending"}
                 <br />→{" "}
                 {destinationJurisdiction?.name ??
                   destinationCountry?.name ??

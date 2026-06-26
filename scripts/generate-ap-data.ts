@@ -104,13 +104,69 @@ const courses: CourseDef[] = [];
 
 // SSC courses (Grades 9-10)
 const sscSubjects = [
-  { code: "AP-FL", nameLocal: "First Language (Telugu/Hindi/Urdu/Sanskrit/Arabic/Persian)", nameEnglish: "First Language (Telugu/Hindi/Urdu/Sanskrit/Arabic/Persian)", category: "Language Arts", required: true, examBased: true, desc: "Andhra Pradesh SSC First Language subject" },
-  { code: "AP-SL", nameLocal: "Second Language (Telugu/Hindi/English/Sanskrit/Urdu)", nameEnglish: "Second Language (Telugu/Hindi/English/Sanskrit/Urdu)", category: "Language Arts", required: true, examBased: true, desc: "Andhra Pradesh SSC Second Language subject" },
-  { code: "AP-ENG", nameLocal: "English", nameEnglish: "English", category: "Language Arts", required: true, examBased: true, desc: "Andhra Pradesh SSC English subject" },
-  { code: "AP-MATH", nameLocal: "Mathematics", nameEnglish: "Mathematics", category: "Mathematics", required: true, examBased: true, desc: "Andhra Pradesh SSC Mathematics subject" },
-  { code: "AP-PS", nameLocal: "Physical Science", nameEnglish: "Physical Science", category: "Science", required: true, examBased: true, desc: "Andhra Pradesh SSC Physical Science subject" },
-  { code: "AP-BS", nameLocal: "Biological Science", nameEnglish: "Biological Science", category: "Science", required: true, examBased: true, desc: "Andhra Pradesh SSC Biological Science subject" },
-  { code: "AP-SS", nameLocal: "Social Studies", nameEnglish: "Social Studies", category: "Social Studies", required: true, examBased: true, desc: "Andhra Pradesh SSC Social Studies subject" },
+  {
+    code: "AP-FL",
+    nameLocal: "First Language (Telugu/Hindi/Urdu/Sanskrit/Arabic/Persian)",
+    nameEnglish: "First Language (Telugu/Hindi/Urdu/Sanskrit/Arabic/Persian)",
+    category: "Language Arts",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC First Language subject",
+  },
+  {
+    code: "AP-SL",
+    nameLocal: "Second Language (Telugu/Hindi/English/Sanskrit/Urdu)",
+    nameEnglish: "Second Language (Telugu/Hindi/English/Sanskrit/Urdu)",
+    category: "Language Arts",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC Second Language subject",
+  },
+  {
+    code: "AP-ENG",
+    nameLocal: "English",
+    nameEnglish: "English",
+    category: "Language Arts",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC English subject",
+  },
+  {
+    code: "AP-MATH",
+    nameLocal: "Mathematics",
+    nameEnglish: "Mathematics",
+    category: "Mathematics",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC Mathematics subject",
+  },
+  {
+    code: "AP-PS",
+    nameLocal: "Physical Science",
+    nameEnglish: "Physical Science",
+    category: "Science",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC Physical Science subject",
+  },
+  {
+    code: "AP-BS",
+    nameLocal: "Biological Science",
+    nameEnglish: "Biological Science",
+    category: "Science",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC Biological Science subject",
+  },
+  {
+    code: "AP-SS",
+    nameLocal: "Social Studies",
+    nameEnglish: "Social Studies",
+    category: "Social Studies",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh SSC Social Studies subject",
+  },
 ];
 
 for (const s of sscSubjects) {
@@ -133,20 +189,132 @@ for (const s of sscSubjects) {
 
 // Intermediate courses (Grades 11-12)
 const interSubjects = [
-  { code: "AP-LANG", nameLocal: "Language (Telugu/Hindi/Sanskrit/Urdu/French/Arabic)", nameEnglish: "Language (Telugu/Hindi/Sanskrit/Urdu/French/Arabic)", category: "Language Arts", required: true, examBased: true, desc: "Andhra Pradesh Intermediate Second Language subject" },
-  { code: "AP-ENG-INTER", nameLocal: "English", nameEnglish: "English", category: "Language Arts", required: true, examBased: true, desc: "Andhra Pradesh Intermediate English subject" },
-  { code: "AP-MATH-INTER", nameLocal: "Mathematics", nameEnglish: "Mathematics", category: "Mathematics", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Mathematics (MPC/MEC group)" },
-  { code: "AP-PHY", nameLocal: "Physics", nameEnglish: "Physics", category: "Science", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Physics (MPC/BiPC group)" },
-  { code: "AP-CHEM", nameLocal: "Chemistry", nameEnglish: "Chemistry", category: "Science", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Chemistry (MPC/BiPC group)" },
-  { code: "AP-BOT", nameLocal: "Botany", nameEnglish: "Botany", category: "Biological Science", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Botany (BiPC group)" },
-  { code: "AP-ZOO", nameLocal: "Zoology", nameEnglish: "Zoology", category: "Biological Science", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Zoology (BiPC group)" },
-  { code: "AP-CIV", nameLocal: "Civics", nameEnglish: "Civics", category: "Social Studies", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Civics (CEC/HEC group)" },
-  { code: "AP-ECO", nameLocal: "Economics", nameEnglish: "Economics", category: "Economics", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Economics (CEC/MEC/HEC group)" },
-  { code: "AP-COM", nameLocal: "Commerce", nameEnglish: "Commerce", category: "Commerce", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Commerce (CEC/MEC group)" },
-  { code: "AP-HIS", nameLocal: "History", nameEnglish: "History", category: "History", required: false, examBased: true, desc: "Andhra Pradesh Intermediate History (HEC group)" },
-  { code: "AP-GEO", nameLocal: "Geography", nameEnglish: "Geography", category: "Geography", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Geography" },
-  { code: "AP-CS", nameLocal: "Computer Science", nameEnglish: "Computer Science", category: "Computer Science", required: false, examBased: true, desc: "Andhra Pradesh Intermediate Computer Science (optional/elective)" },
-  { code: "AP-PE", nameLocal: "Physical Education", nameEnglish: "Physical Education", category: "Physical Education", required: false, examBased: false, desc: "Andhra Pradesh Intermediate Physical Education" },
+  {
+    code: "AP-LANG",
+    nameLocal: "Language (Telugu/Hindi/Sanskrit/Urdu/French/Arabic)",
+    nameEnglish: "Language (Telugu/Hindi/Sanskrit/Urdu/French/Arabic)",
+    category: "Language Arts",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Second Language subject",
+  },
+  {
+    code: "AP-ENG-INTER",
+    nameLocal: "English",
+    nameEnglish: "English",
+    category: "Language Arts",
+    required: true,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate English subject",
+  },
+  {
+    code: "AP-MATH-INTER",
+    nameLocal: "Mathematics",
+    nameEnglish: "Mathematics",
+    category: "Mathematics",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Mathematics (MPC/MEC group)",
+  },
+  {
+    code: "AP-PHY",
+    nameLocal: "Physics",
+    nameEnglish: "Physics",
+    category: "Science",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Physics (MPC/BiPC group)",
+  },
+  {
+    code: "AP-CHEM",
+    nameLocal: "Chemistry",
+    nameEnglish: "Chemistry",
+    category: "Science",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Chemistry (MPC/BiPC group)",
+  },
+  {
+    code: "AP-BOT",
+    nameLocal: "Botany",
+    nameEnglish: "Botany",
+    category: "Biological Science",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Botany (BiPC group)",
+  },
+  {
+    code: "AP-ZOO",
+    nameLocal: "Zoology",
+    nameEnglish: "Zoology",
+    category: "Biological Science",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Zoology (BiPC group)",
+  },
+  {
+    code: "AP-CIV",
+    nameLocal: "Civics",
+    nameEnglish: "Civics",
+    category: "Social Studies",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Civics (CEC/HEC group)",
+  },
+  {
+    code: "AP-ECO",
+    nameLocal: "Economics",
+    nameEnglish: "Economics",
+    category: "Economics",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Economics (CEC/MEC/HEC group)",
+  },
+  {
+    code: "AP-COM",
+    nameLocal: "Commerce",
+    nameEnglish: "Commerce",
+    category: "Commerce",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Commerce (CEC/MEC group)",
+  },
+  {
+    code: "AP-HIS",
+    nameLocal: "History",
+    nameEnglish: "History",
+    category: "History",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate History (HEC group)",
+  },
+  {
+    code: "AP-GEO",
+    nameLocal: "Geography",
+    nameEnglish: "Geography",
+    category: "Geography",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Geography",
+  },
+  {
+    code: "AP-CS",
+    nameLocal: "Computer Science",
+    nameEnglish: "Computer Science",
+    category: "Computer Science",
+    required: false,
+    examBased: true,
+    desc: "Andhra Pradesh Intermediate Computer Science (optional/elective)",
+  },
+  {
+    code: "AP-PE",
+    nameLocal: "Physical Education",
+    nameEnglish: "Physical Education",
+    category: "Physical Education",
+    required: false,
+    examBased: false,
+    desc: "Andhra Pradesh Intermediate Physical Education",
+  },
 ];
 
 for (const s of interSubjects) {
@@ -173,18 +341,26 @@ const courseRows = courses.map(
     `${c.id},${c.curriculumId},${c.code},${c.nameLocal},${c.nameEnglish},${c.category},${c.grade},${c.level},,${c.required},${c.examBased},${c.description},,partial,,`,
 );
 
-console.log(`Generated ${courses.length} courses (${sscSubjects.length * 2} SSC + ${interSubjects.length * 2} Intermediate)`);
+console.log(
+  `Generated ${courses.length} courses (${sscSubjects.length * 2} SSC + ${interSubjects.length * 2} Intermediate)`,
+);
 
 // ── 5. PROVENANCE LINKS ───────────────────────────────────────────
 const provenanceRows: string[] = [];
 
 // Jurisdiction identity fields (5 links)
-const jurisdictionFields = ["name", "jurisdiction_type", "code", "education_authority_name", "website_url"];
+const jurisdictionFields = [
+  "name",
+  "jurisdiction_type",
+  "code",
+  "education_authority_name",
+  "website_url",
+];
 for (const field of jurisdictionFields) {
   provenanceRows.push(
     `${randomUUID()},jurisdictions,${AP_JURISDICTION_ID},${BSEAP_SOURCE_ID},${field},` +
-    `BSEAP official website confirms Andhra Pradesh state board jurisdiction,,` +
-    `Official Andhra Pradesh state board jurisdiction identity,${AP_JURISDICTION_ID},,,true,true,true,`,
+      `BSEAP official website confirms Andhra Pradesh state board jurisdiction,,` +
+      `Official Andhra Pradesh state board jurisdiction identity,${AP_JURISDICTION_ID},,,true,true,true,`,
   );
 }
 
@@ -196,8 +372,8 @@ for (const [curriculumId, sourceId, name] of [
   for (const field of ["name", "grade_range", "authority"]) {
     provenanceRows.push(
       `${randomUUID()},curricula,${curriculumId},${sourceId},${field},` +
-      `${name} curriculum name and scope confirmed from official board website,,` +
-      `Official ${name} curriculum record,${AP_JURISDICTION_ID},,,true,true,true,`,
+        `${name} curriculum name and scope confirmed from official board website,,` +
+        `Official ${name} curriculum record,${AP_JURISDICTION_ID},,,true,true,true,`,
     );
   }
 }
@@ -206,8 +382,8 @@ for (const [curriculumId, sourceId, name] of [
 for (const c of courses) {
   provenanceRows.push(
     `${randomUUID()},curriculum_courses,${c.id},${SCERT_AP_SOURCE_ID},course_name_english,` +
-    `SCERT syllabus lists subject for Andhra Pradesh state board curriculum,,` +
-    `Official Andhra Pradesh state board subject,${AP_JURISDICTION_ID},,,true,true,true,`,
+      `SCERT syllabus lists subject for Andhra Pradesh state board curriculum,,` +
+      `Official Andhra Pradesh state board subject,${AP_JURISDICTION_ID},,,true,true,true,`,
   );
 }
 
@@ -223,10 +399,10 @@ for (const [curriculumId, name] of [
   for (const field of ["name", "grade_range", "authority", "description"]) {
     auditRows.push(
       `${randomUUID()},curricula,${curriculumId},${field},` +
-      `https://www.bse.ap.gov.in,Board of Secondary Education Andhra Pradesh,` +
-      `${name} official page,${name} curriculum overview,` +
-      `${name} ${field} confirmed from official board website,` +
-      `yes,yes,yes,kept,2026-06-25`,
+        `https://www.bse.ap.gov.in,Board of Secondary Education Andhra Pradesh,` +
+        `${name} official page,${name} curriculum overview,` +
+        `${name} ${field} confirmed from official board website,` +
+        `yes,yes,yes,kept,2026-06-25`,
     );
   }
 }
